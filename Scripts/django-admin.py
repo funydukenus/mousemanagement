@@ -1,4 +1,4 @@
-#!d:\project\mousemanagement\scripts\python.exe
+#!D:\Project\mousemanagement\Scripts\python.exe
 from django.core import management
 
 if __name__ == "__main__":
