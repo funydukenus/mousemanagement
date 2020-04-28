@@ -1,1 +1,1 @@
-web: gunicorn mousemanagement.mousemanagement.wsgi --log-file -
+web: gunicorn mousemanagement.wsgi --log-file -
