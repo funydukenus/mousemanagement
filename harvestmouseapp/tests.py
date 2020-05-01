@@ -2,8 +2,10 @@ from django.test import TestCase
 from rest_framework.test import APIRequestFactory
 from .views import harvested_mouse_list
 from .views import harvested_mouse_insertion
+from .views import harvested_mouse_update
 from .models import HarvestedMouse
-from datetime import datetime
+from datetime import datetime, timedelta
+
 
 ############################################
 # Function name: is_match_data
@@ -63,13 +65,20 @@ def make_request_and_check(test_cases, data, url, request_object, expected_statu
 ############################################
 def check_model_view_objects(test_cases, view_list_class, view_url, expect_num_of_return, list_to_matched,
                              expect_num_of_remain, keyword, remove_involved=True, target=None, find_matched=False,
-                             is_view_class=False):
+                             is_view_class=False, data=None):
     # Check if the return of list of users matched with the listToMatched
 
     # Create an instance of GET requests
-    request = test_cases.factory.get(
-        path=view_url
-    )
+    if not data:
+        request = test_cases.factory.get(
+            path=view_url
+        )
+    else:
+        request = test_cases.factory.get(
+            data=data,
+            path=view_url,
+            format='json'
+        )
 
     if is_view_class:
         response = view_list_class().as_view()(request, *[], **{})
@@ -83,7 +92,7 @@ def check_model_view_objects(test_cases, view_list_class, view_url, expect_num_o
             # If the list is not empty,
             # it means the list getting from the
             # view is incorrect
-            if len(list_to_matched) != expect_num_of_remain:
+            if not(len(list_to_matched) == expect_num_of_remain):
                 test_cases.assertTrue(False)
         else:
             if find_matched:
@@ -117,12 +126,12 @@ class HarvestedMouseTestCase(TestCase):
             gender='M',
             mouseLine='mouseLine1',
             genoType='genoType1',
-            birthDate=datetime.now(),
-            endDate=datetime.now(),
+            birthDate=datetime.now().date(),
+            endDate=datetime.now().date(),
             confirmationOfGenoType=True,
             phenoType='phenoType1',
             projectTitle='projectTitle1',
-            experiment='experiement1',
+            experiment='experiementTesting',
             comment='comment1'
         )
         harvested_mouse.save()
@@ -138,8 +147,8 @@ class HarvestedMouseTestCase(TestCase):
             'gender': 'M',
             'mouseLine': 'mouseLine1',
             'genoType': 'genoType1',
-            'birthDate': str(datetime.now()),
-            'endDate': str(datetime.now()),
+            'birthDate': str(datetime.now().date()),
+            'endDate': str(datetime.now().date()),
             'confirmationOfGenoType': 'True',
             'phenoType': 'phenoType1',
             'projectTitle': 'projectTitle1',
@@ -169,4 +178,443 @@ class HarvestedMouseTestCase(TestCase):
             list_to_matched=['handler1', 'handler2'],
             expect_num_of_remain=0,
             keyword='handler'
+        )
+
+    # Pass requirement
+    # 1. create the user with required field
+    # 2. use REST Api to filter and retrieve the information without 404
+    # 3. matched with the required field set in the first requirement
+    def test_filter_harvest_mouse_list(self):
+
+        # Insert the second mouse with same
+        # handler as default first entry
+        data_to_post = {
+            'handler': 'handler1',
+            'physicalId': '12345679',
+            'gender': 'M',
+            'mouseLine': 'mouseLine1',
+            'genoType': 'genoType1',
+            'birthDate': str(datetime.now().date()),
+            'endDate': str(datetime.now().date()),
+            'confirmationOfGenoType': 'True',
+            'phenoType': 'phenoType1',
+            'projectTitle': 'projectTitle1',
+            'experiment': 'experiement1',
+            'comment': 'comment1'
+        }
+
+        # Make the request and check for the status code
+        make_request_and_check(
+            test_cases=self,
+            data=data_to_post,
+            url='/harvestedmouse/insert',
+            request_object=self.factory.post,
+            expected_status_code=201,
+            view_class=harvested_mouse_insertion
+        )
+
+        # Create the 3rd entry with different handler
+        # from the first and second entry
+        data_to_post = {
+            'handler': 'handler2',
+            'physicalId': '12345679',
+            'gender': 'M',
+            'mouseLine': 'mouseLine1',
+            'genoType': 'genoType1',
+            'birthDate': str(datetime.now().date()),
+            'endDate': str(datetime.now().date()),
+            'confirmationOfGenoType': 'True',
+            'phenoType': 'phenoType1',
+            'projectTitle': 'projectTitle1',
+            'experiment': 'experiement1',
+            'comment': 'comment1'
+        }
+
+        # Make the request and check for the status code
+        make_request_and_check(
+            test_cases=self,
+            data=data_to_post,
+            url='/harvestedmouse/insert',
+            request_object=self.factory.post,
+            expected_status_code=201,
+            view_class=harvested_mouse_insertion
+        )
+
+        # Make a Request to list all the harvested mouse
+        # and use the list to matched to all the list of the harvested mouse
+        # It will remove from the retrived mouse list.
+        # The remaining should be 0
+        check_model_view_objects(
+            test_cases=self,
+            view_list_class=harvested_mouse_list,
+            view_url='/harvestedmouse/list',
+            expect_num_of_return=2,
+            list_to_matched=['handler1'],
+            expect_num_of_remain=0,
+            keyword='handler',
+            data={
+                'handler,1': 'handler1'
+            }
+        )
+
+    # Pass requirement
+    # 1. Create arbitrary number of harvested mouse entries
+    # 2. Query with multiple different key
+    # 3. matched with the required field set in the 1st and 2nd requirement
+    def test_filter_advanced_harvest_mouse_list(self):
+        # Insert with multiple handler 0 to 4 but with the same Expr1
+        # Insert with multiple handler 5 to 8 but with same Expr2
+        # It should return handler 1 to handler 3 if filtered with Expr1
+        # But exclude the default entry
+        experiment_1 = 'Expr1'
+        experiment_2 = 'Expr2'
+
+        normal_pheno = 'normal'
+        special_pheno = 'speical'
+
+        group_1_start = 0
+        group_1_stop = 4
+        group_2_start = 5
+        group_2_stop = 8
+
+        list_to_matched = []
+
+        for i in range(group_1_start,group_2_stop):
+            if i <= group_1_stop:
+                experiment = experiment_1
+                if i <= group_1_stop-2:
+                    pheno = special_pheno
+                    list_to_matched.append('handler' + str(i))
+                else:
+                    pheno = normal_pheno
+            else:
+                experiment = experiment_2
+                pheno = normal_pheno
+
+            data_to_post = {
+                'handler': 'handler' + str(i),
+                'physicalId': '12345679',
+                'gender': 'M',
+                'mouseLine': 'mouseLine1',
+                'genoType': 'genoType1',
+                'birthDate': str(datetime.now().date()),
+                'endDate': str(datetime.now().date()),
+                'confirmationOfGenoType': 'True',
+                'phenoType': pheno,
+                'projectTitle': 'projectTitle1',
+                'experiment': experiment,
+                'comment': 'comment1'
+            }
+
+            # Make the request and check for the status code
+            make_request_and_check(
+                test_cases=self,
+                data=data_to_post,
+                url='/harvestedmouse/insert',
+                request_object=self.factory.post,
+                expected_status_code=201,
+                view_class=harvested_mouse_insertion
+            )
+
+        # Make a Request to list all the harvested mouse
+        # and use the list to matched to all the list of the harvested mouse
+        # It will remove from the retrieved mouse list.
+        # The remaining should be 0
+        check_model_view_objects(
+            test_cases=self,
+            view_list_class=harvested_mouse_list,
+            view_url='/harvestedmouse/list',
+            expect_num_of_return=group_1_stop-1,
+            list_to_matched=list_to_matched,
+            expect_num_of_remain=0,
+            keyword='handler',
+            data={
+                'experiment,1': experiment_1,
+                'phenoType,1': special_pheno
+            }
+        )
+
+    # Pass requirement
+    # 1. Create arbitrary number of harvested mouse entries
+    # 2. Query with multiple different key
+    # 3. matched with the required field set in the 1st and 2nd requirement
+    def test_filter_datetime_harvest_mouse_list(self):
+        # Insert with multiple handler 0 to 4 but with the same Expr1
+        # Insert with multiple handler 5 to 8 but with same Expr2
+        # It should return handler 1 to handler 3 if filtered with Expr1
+        # But exclude the default entry
+        experiment_1 = 'Expr1'
+        experiment_2 = 'Expr2'
+
+        normal_pheno = 'normal'
+        special_pheno = 'speical'
+
+        group_1_start = 0
+        group_1_stop = 4
+        group_2_start = 5
+        group_2_stop = 8
+
+        list_to_matched = []
+
+        specific_date = datetime.now()
+        for i in range(group_1_start,group_2_stop):
+
+            cur_date = datetime.now().date() + timedelta(days=i)
+
+            if i == group_2_start:
+                specific_date = cur_date
+
+            if i >= group_2_start:
+                list_to_matched.append('handler' + str(i))
+
+            data_to_post = {
+                'handler': 'handler' + str(i),
+                'physicalId': '12345679',
+                'gender': 'M',
+                'mouseLine': 'mouseLine1',
+                'genoType': 'genoType1',
+                'birthDate': str(cur_date),
+                'endDate': str(datetime.now().date()),
+                'confirmationOfGenoType': 'True',
+                'phenoType': 'phenoType1',
+                'projectTitle': 'projectTitle1',
+                'experiment': 'Experiment1',
+                'comment': 'comment1'
+            }
+
+            # Make the request and check for the status code
+            make_request_and_check(
+                test_cases=self,
+                data=data_to_post,
+                url='/harvestedmouse/insert',
+                request_object=self.factory.post,
+                expected_status_code=201,
+                view_class=harvested_mouse_insertion
+            )
+
+        # Make a Request to list all the harvested mouse
+        # and use the list to matched to all the list of the harvested mouse
+        # It will remove from the retrieved mouse list.
+        # The remaining should be 0
+        check_model_view_objects(
+            test_cases=self,
+            view_list_class=harvested_mouse_list,
+            view_url='/harvestedmouse/list',
+            expect_num_of_return=group_2_stop - group_2_start,
+            list_to_matched=list_to_matched.copy(),
+            expect_num_of_remain=0,
+            keyword='handler',
+            data={
+                'birthDate,2': specific_date
+            }
+        )
+
+        list_to_matched.remove('handler' + str(group_2_stop - 1))
+
+        # Make a Request to list all the harvested mouse
+        # and use the list to matched to all the list of the harvested mouse
+        # It will remove from the retrieved mouse list.
+        # The remaining should be 0
+        check_model_view_objects(
+            test_cases=self,
+            view_list_class=harvested_mouse_list,
+            view_url='/harvestedmouse/list',
+            expect_num_of_return=group_2_stop - group_2_start - 1,
+            list_to_matched=list_to_matched,
+            expect_num_of_remain=0,
+            keyword='handler',
+            data={
+                'birthDate,2': specific_date,
+                'birthDate,3': specific_date + timedelta(days=1)
+            }
+        )
+
+
+    # Pass requirement
+    # 1. Insert multiple mouses at one time
+    # 2. matched with the required field set
+    def test_advanced_harvest_mouse_insert_multiple(self):
+
+        arr = []
+        list_to_matched = []
+
+        group_start = 0
+        group_stop = 8
+
+        for i in range(group_start,group_stop):
+            list_to_matched.append('handler' + str(i))
+            data_to_post = {
+                'handler': 'handler' + str(i),
+                'physicalId': '12345679',
+                'gender': 'M',
+                'mouseLine': 'mouseLine1',
+                'genoType': 'genoType1',
+                'birthDate': str(datetime.now().date()),
+                'endDate': str(datetime.now().date()),
+                'confirmationOfGenoType': 'True',
+                'phenoType': 'phenoType1',
+                'projectTitle': 'projectTitle1',
+                'experiment': 'Experiment1',
+                'comment': 'comment1'
+            }
+
+            arr.append(data_to_post)
+
+        data = {}
+        data['harvestedmouselist'] = arr
+
+
+        # Make the request and check for the status code
+        make_request_and_check(
+            test_cases=self,
+            data=data,
+            url='/harvestedmouse/insert',
+            request_object=self.factory.post,
+            expected_status_code=201,
+            view_class=harvested_mouse_insertion
+        )
+
+        # The remaining should be 0
+        check_model_view_objects(
+            test_cases=self,
+            view_list_class=harvested_mouse_list,
+            view_url='/harvestedmouse/list',
+            expect_num_of_return=group_stop - group_start + 1,
+            list_to_matched=list_to_matched,
+            expect_num_of_remain=0,
+            keyword='handler'
+        )
+
+    # Pass requirement
+    # 1. Insert multiple mouses at one time
+    # 2. matched with the required field set
+    def test_harvest_mouse_update(self):
+        data_to_post = {
+            'handler': 'handler1',
+            'physicalId': '12345679',
+            'gender': 'M',
+            'mouseLine': 'mouseLine1',
+            'genoType': 'genoType1',
+            'birthDate': str(datetime.now().date()),
+            'endDate': str(datetime.now().date()),
+            'confirmationOfGenoType': 'True',
+            'phenoType': 'phenoType1',
+            'projectTitle': 'projectTitle1',
+            'experiment': 'Experiment1',
+            'comment': 'comment1'
+        }
+
+
+        # Make the request and check for the status code
+        response = make_request_and_check(
+                       test_cases=self,
+                       data=data_to_post,
+                       url='/harvestedmouse/insert',
+                       request_object=self.factory.post,
+                       expected_status_code=201,
+                       view_class=harvested_mouse_insertion
+                   )
+
+        data_to_post['id'] = response.data['id']
+
+        # Change handler to handler2
+        data_to_post['handler'] = 'handler2'
+
+        # Make the request and check for the status code
+        response = make_request_and_check(
+                       test_cases=self,
+                       data=data_to_post,
+                       url='/harvestedmouse/update',
+                       request_object=self.factory.put,
+                       expected_status_code=200,
+                       view_class=harvested_mouse_update
+                   )
+
+        # The remaining should be 0
+        check_model_view_objects(
+            test_cases=self,
+            view_list_class=harvested_mouse_list,
+            view_url='/harvestedmouse/list',
+            expect_num_of_return=2,
+            list_to_matched=['handler1', 'handler2'],
+            expect_num_of_remain=0,
+            keyword='handler'
+        )
+
+    # Pass requirement
+    # 1. Insert multiple mouses at one time
+    # 2. matched with the required field set
+    def test_advanced_harvest_mouse_multiple_update(self):
+        data_to_post_2 = {
+            'handler': 'handler2',
+            'physicalId': '12345679',
+            'gender': 'M',
+            'mouseLine': 'mouseLine1',
+            'genoType': 'genoType1',
+            'birthDate': str(datetime.now().date()),
+            'endDate': str(datetime.now().date()),
+            'confirmationOfGenoType': 'True',
+            'phenoType': 'phenoType1',
+            'projectTitle': 'projectTitle1',
+            'experiment': 'Experiment1',
+            'comment': 'comment1'
+        }
+
+        data_to_post_3 = {
+            'handler': 'handler3',
+            'physicalId': '12345679',
+            'gender': 'M',
+            'mouseLine': 'mouseLine1',
+            'genoType': 'genoType1',
+            'birthDate': str(datetime.now().date()),
+            'endDate': str(datetime.now().date()),
+            'confirmationOfGenoType': 'True',
+            'phenoType': 'phenoType1',
+            'projectTitle': 'projectTitle1',
+            'experiment': 'Experiment1',
+            'comment': 'comment1'
+        }
+        data_arr = {}
+        data_arr['harvestedmouselist'] = []
+        data_arr['harvestedmouselist'].append(data_to_post_2)
+        data_arr['harvestedmouselist'].append(data_to_post_3)
+
+        # Make the request and check for the status code
+        response = make_request_and_check(
+                       test_cases=self,
+                       data=data_arr,
+                       url='/harvestedmouse/insert',
+                       request_object=self.factory.post,
+                       expected_status_code=201,
+                       view_class=harvested_mouse_insertion
+                   )
+
+        data_to_post_2['id'] = response.data[0]['id']
+        data_to_post_3['id'] = response.data[1]['id']
+
+        # Change handler to handler2
+        data_to_post_2['projectTitle'] = 'ABC'
+
+        # Change handler to handler2
+        data_to_post_3['projectTitle'] = 'CBA'
+
+        # Make the request and check for the status code
+        response = make_request_and_check(
+                       test_cases=self,
+                       data=data_arr,
+                       url='/harvestedmouse/update',
+                       request_object=self.factory.put,
+                       expected_status_code=200,
+                       view_class=harvested_mouse_update
+                   )
+
+        # The remaining should be 0
+        check_model_view_objects(
+            test_cases=self,
+            view_list_class=harvested_mouse_list,
+            view_url='/harvestedmouse/list',
+            expect_num_of_return=3,
+            list_to_matched=['ABC', 'CBA'],
+            expect_num_of_remain=0,
+            keyword='projectTitle'
         )
