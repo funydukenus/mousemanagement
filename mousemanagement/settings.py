@@ -25,7 +25,7 @@ SECRET_KEY = 'wtzs$+6_@w(u*+ol_zw^046#@r2e*fj!-1lu(**=whh#05xih2'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['mousemanagement.herokuapp.com']
+ALLOWED_HOSTS = ['mousemanagement.herokuapp.com', '127.0.0.1']
 
 
 # Application definition
@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'harvestmouseapp.apps.HarvestmouseappConfig'
 ]
 
 MIDDLEWARE = [

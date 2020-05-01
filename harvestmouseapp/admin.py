@@ -1,3 +1,6 @@
 from django.contrib import admin
+from .models import HarvestedMouse, HarvestedBasedNumber, HarvestedAdvancedNumber
 
-# Register your models here.
+admin.site.register(HarvestedMouse)
+admin.site.register(HarvestedBasedNumber)
+admin.site.register(HarvestedAdvancedNumber)

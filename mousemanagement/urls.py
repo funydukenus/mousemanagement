@@ -15,7 +15,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from harvestmouseapp.views import harvested_mouse_insertion
+from harvestmouseapp.views import harvested_mouse_list
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('harvestedmouse/insert', harvested_mouse_insertion),
+    path('harvestedmouse/list', harvested_mouse_list),
 ]

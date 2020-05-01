@@ -1,0 +1,74 @@
+All user ( So called reporter )
+1. Create harvested mouse
+2. Edit harvested mouse
+3. delete harvested mouse
+4. Login & Loggout mechansim of the website
+5. Reporter is also one of the Handler
+
+Super user
+1. Only super user can edit everyone's entry
+2. Account management
+   terminate
+   activate
+
+
+Create harvested mouse entry
+1. Reporter( or Super user ) clicks create button and the window prompts reporter the information which needed by the mouse information
+2. The information includes the following
+   1. handler    ( String )
+   2. physicalId ( String )
+   3. gender     ( String enumration type )
+   4. mouseLine  ( String )
+   5. genoType   ( String )
+   6. birthDate  ( DateTime )
+   7. endDate    ( DateTime )
+   8. confirmationOfGenotype ( Boolean )
+   9. phenoType              ( String )
+   10. projectTitle          ( String )
+   11. experiement           ( String )
+   12. comment               ( String )
+   13. numberOfPfaProcessedBlocks
+       1. liver              ( number )
+       2. liverTumor         ( number )
+       3. smallIntestine     ( number )
+       4. smallIntestineTumor( number )
+       5. skin               ( number )
+       6. skinHair           ( number )
+       7. others             ( number )
+   14. numberOfTissuesFrozen
+       1. liver              ( number )
+       2. liverTumor         ( number )
+       3. others             ( number )
+3. Reporter( or Super user ) clicks next to enter the next mouse information, go back to step 2 or All the mouse information are done, go to step 4.
+4. Reporter( or Super user ) clicks finish button to finish the creating entry.
+
+
+Edit harvested mouse
+
+1. Reporter( or Super user ) clicks edit button. A checkbox shown for each of the entry row in the table.
+   > In case of reporter, only the reporter self-reported entry are enabled for checkbox
+   > In case of super user, all the entry are enabled for checkbox
+2. Reporter( or Super user ) choose a collection of the entries by ticking the checkbox and click proceed button.
+3. A window with entries filled with information of the first selected harvested mouse. Reporter( or Super user ) edits the information needed and
+   click the save button to save current edited mouse.
+4. Reporter( or Super user ) click the next button to proceed to the next mouse.
+5. By reaching the final chosen of harvested mouse, if all edited mouse has been saved, Reporter( or Super user ) clicks
+   finish button and the window is close. Or Reporter( or Super user ) clicks save all button to save all unsaved changes
+   or click save none and quit.
+
+Delete harvested mouse
+
+1. Reporter( or Super user ) clicks edit button. A checkbox shown for each of the entry row in the table.
+   > In case of reporter, only the reporter self-reported entry are enabled for checkbox
+   > In case of super user, all the entry are enabled for checkbox
+2. Reporter( or Super user ) choose a collection of the entries by ticking the checkbox and click preview button.
+3. A window with all the entries of the harvested mouse that going to be deleted will be shown.
+4. Reporter( or Super user ) clicks delete all button and all the chosen entries will be deleted.
+
+
+User
+email
+password
+status
+created date
+last login date
