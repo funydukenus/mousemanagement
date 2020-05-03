@@ -53,7 +53,7 @@ def harvested_mouse_insertion(request):
 @api_view(['PUT'])
 def harvested_mouse_update(request):
     """
-    Insertion of the harvested mouse into database
+    Update of the harvested mouse into database
     """
     data = request.data.get("harvestedmouselist") if 'harvestedmouselist' in request.data else request.data
     many = isinstance(data, list)
@@ -70,6 +70,27 @@ def harvested_mouse_update(request):
         return Response(status=status.HTTP_200_OK)
 
 
+@api_view(['DELETE'])
+def harvested_mouse_delete(request):
+    """
+    Delete of the selected harvested mouse
+    """
+    data = request.data.get("harvestedmouselist") if 'harvestedmouselist' in request.data else request.data
+    many = isinstance(data, list)
+    if not many:
+        if delete_mouse(data=data):
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+    else:
+        for idx, item in enumerate(data):
+            if not delete_mouse(data=item):
+                return Response(idx-1, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(status=status.HTTP_200_OK)
+
+
+
 # Helper
 def update_mouse(data):
     instance = HarvestedMouse.objects.get(pk=data['id'])
@@ -79,3 +100,14 @@ def update_mouse(data):
         return True
     else:
         return False
+
+
+def delete_mouse(data):
+    if HarvestedMouse.objects.filter(pk=data['id']).count() == 0:
+        return False
+    else:
+        instance = HarvestedMouse.objects.get(pk=data['id'])
+        instance.delete()
+        return True
+
+

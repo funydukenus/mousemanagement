@@ -3,6 +3,7 @@ from rest_framework.test import APIRequestFactory
 from .views import harvested_mouse_list
 from .views import harvested_mouse_insertion
 from .views import harvested_mouse_update
+from .views import harvested_mouse_delete
 from .models import HarvestedMouse
 from datetime import datetime, timedelta
 
@@ -617,4 +618,175 @@ class HarvestedMouseTestCase(TestCase):
             list_to_matched=['ABC', 'CBA'],
             expect_num_of_remain=0,
             keyword='projectTitle'
+        )
+    # Pass requirement
+    # 1. Delete inserted mouse handler2
+    # 2. handler 2 should not exists in the list
+    def test_harvest_mouse_delete(self):
+        data_to_post = {
+            'handler': 'handler2',
+            'physicalId': '12345679',
+            'gender': 'M',
+            'mouseLine': 'mouseLine1',
+            'genoType': 'genoType1',
+            'birthDate': str(datetime.now().date()),
+            'endDate': str(datetime.now().date()),
+            'confirmationOfGenoType': 'True',
+            'phenoType': 'phenoType1',
+            'projectTitle': 'projectTitle1',
+            'experiment': 'Experiment1',
+            'comment': 'comment1'
+        }
+
+        # Make the request and check for the status code
+        # Insert handler 2 mouse into db
+        response = make_request_and_check(
+                       test_cases=self,
+                       data=data_to_post,
+                       url='/harvestedmouse/insert',
+                       request_object=self.factory.post,
+                       expected_status_code=201,
+                       view_class=harvested_mouse_insertion
+                   )
+
+        data_to_post['id'] = response.data['id']
+
+        # Check handler 2 is inserted into db
+        # by retrieving entire mouse entries
+        # The remaining should be 0
+        check_model_view_objects(
+            test_cases=self,
+            view_list_class=harvested_mouse_list,
+            view_url='/harvestedmouse/list',
+            expect_num_of_return=2,
+            list_to_matched=['handler1', 'handler2'],
+            expect_num_of_remain=0,
+            keyword='handler'
+        )
+
+        # Make request to delete the handler 2 mouse
+        # Make the request and check for the status code
+        response = make_request_and_check(
+                       test_cases=self,
+                       data=data_to_post,
+                       url='/harvestedmouse/delete',
+                       request_object=self.factory.delete,
+                       expected_status_code=200,
+                       view_class=harvested_mouse_delete
+                   )
+
+        # After deleted handler2 mouse
+        # only handler1 remained
+        # The remaining should be 0
+        check_model_view_objects(
+            test_cases=self,
+            view_list_class=harvested_mouse_list,
+            view_url='/harvestedmouse/list',
+            expect_num_of_return=1,
+            list_to_matched=['handler1'],
+            expect_num_of_remain=0,
+            keyword='handler'
+        )
+
+    # Pass requirement
+    # 1. Delete inserted mouse handler2
+    # 2. handler 2 should not exists in the list
+    def test_advanced_harvest_mouse_multiple_delete(self):
+        data_to_post_2 = {
+            'handler': 'handler2',
+            'physicalId': '12345679',
+            'gender': 'M',
+            'mouseLine': 'mouseLine1',
+            'genoType': 'genoType1',
+            'birthDate': str(datetime.now().date()),
+            'endDate': str(datetime.now().date()),
+            'confirmationOfGenoType': 'True',
+            'phenoType': 'phenoType1',
+            'projectTitle': 'projectTitle1',
+            'experiment': 'Experiment1',
+            'comment': 'comment1'
+        }
+
+        # Make the request and check for the status code
+        # Insert handler 2 mouse into db
+        response = make_request_and_check(
+                       test_cases=self,
+                       data=data_to_post_2,
+                       url='/harvestedmouse/insert',
+                       request_object=self.factory.post,
+                       expected_status_code=201,
+                       view_class=harvested_mouse_insertion
+                   )
+
+        data_to_post_2['id'] = response.data['id']
+
+        data_to_post_3 = {
+            'handler': 'handler3',
+            'physicalId': '12345679',
+            'gender': 'M',
+            'mouseLine': 'mouseLine1',
+            'genoType': 'genoType1',
+            'birthDate': str(datetime.now().date()),
+            'endDate': str(datetime.now().date()),
+            'confirmationOfGenoType': 'True',
+            'phenoType': 'phenoType1',
+            'projectTitle': 'projectTitle1',
+            'experiment': 'Experiment1',
+            'comment': 'comment1'
+        }
+
+        # Make the request and check for the status code
+        # Insert handler 2 mouse into db
+        response = make_request_and_check(
+                       test_cases=self,
+                       data=data_to_post_3,
+                       url='/harvestedmouse/insert',
+                       request_object=self.factory.post,
+                       expected_status_code=201,
+                       view_class=harvested_mouse_insertion
+                   )
+
+        data_to_post_3['id'] = response.data['id']
+
+
+        # After inserted 2 mice
+        # there will be 3 mouses handler1,handler2 and handler3
+        # The remaining should be 0
+        check_model_view_objects(
+            test_cases=self,
+            view_list_class=harvested_mouse_list,
+            view_url='/harvestedmouse/list',
+            expect_num_of_return=3,
+            list_to_matched=['handler1', 'handler2', 'handler3'],
+            expect_num_of_remain=0,
+            keyword='handler'
+        )
+
+        arr = []
+        arr.append(data_to_post_2)
+        arr.append(data_to_post_3)
+
+        # Delete handler 2 and handler 3
+       # Make request to delete the handler 2 mouse
+        # Make the request and check for the status code
+        response = make_request_and_check(
+                       test_cases=self,
+                       data=arr,
+                       url='/harvestedmouse/delete',
+                       request_object=self.factory.delete,
+                       expected_status_code=200,
+                       view_class=harvested_mouse_delete
+                   )
+
+       # After deleted handler2 and handler 3mouse
+        # only handler1 remained
+        # The remaining should be 0
+        check_model_view_objects(
+            test_cases=self,
+            view_list_class=harvested_mouse_list,
+            view_url='/harvestedmouse/list',
+            expect_num_of_return=1,
+            list_to_matched=['handler1'],
+            expect_num_of_remain=0,
+            keyword='handler'
         )
