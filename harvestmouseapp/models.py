@@ -20,7 +20,7 @@ class HarvestedMouse(models.Model):
     genoType = models.TextField()
     birthDate = models.DateField(auto_now_add=False)
     endDate = models.DateField(auto_now_add=False)
-    confirmationOfGenoType = models.BooleanField(default=False)
+    confirmationOfGenoType = models.TextField()
     phenoType = models.TextField()
     projectTitle = models.TextField()
     experiment = models.TextField()

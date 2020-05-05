@@ -89,7 +89,14 @@ def harvested_mouse_delete(request):
 
         return Response(status=status.HTTP_200_OK)
 
+@api_view(['DELETE'])
+def harvested_all_mouse_delete(request):
+    HarvestedMouse.objects.all().delete()
 
+    if HarvestedMouse.objects.all().count() == 0:
+        return Response(status=status.HTTP_200_OK)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 # Helper
 def update_mouse(data):
