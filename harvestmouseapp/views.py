@@ -4,6 +4,9 @@ from rest_framework.response import Response
 
 from .models import HarvestedMouse
 from .serializers import HarvestedMouseSerializer
+from django import forms
+import json
+
 
 # With api view wrapper, method validation is auto-checked
 # wrong API request will auto return Unathorized method
@@ -91,6 +94,9 @@ def harvested_mouse_delete(request):
 
 @api_view(['DELETE'])
 def harvested_all_mouse_delete(request):
+    """
+    Deletion of the harvested mouse into database
+    """
     HarvestedMouse.objects.all().delete()
 
     if HarvestedMouse.objects.all().count() == 0:
@@ -98,8 +104,21 @@ def harvested_all_mouse_delete(request):
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
+
+@api_view(['POST'])
+def harvested_import_mouse(request):
+    form = UploadFileForm(request.POST, request.FILES)
+    if form.is_valid():
+        filename = save_uploaded_file(request.FILES['file'])
+        return insert_external_data(filename)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
 # Helper
 def update_mouse(data):
+    """
+    Helper function to update the given mouse data
+    """
     instance = HarvestedMouse.objects.get(pk=data['id'])
     incoming_serializer = HarvestedMouseSerializer(instance, data=data)
     if incoming_serializer.is_valid():
@@ -110,11 +129,47 @@ def update_mouse(data):
 
 
 def delete_mouse(data):
+    """
+    Helper function to delete the given mouse data
+    """
     if HarvestedMouse.objects.filter(pk=data['id']).count() == 0:
         return False
     else:
         instance = HarvestedMouse.objects.get(pk=data['id'])
         instance.delete()
         return True
+
+
+class UploadFileForm(forms.Form):
+    """
+    UploadFileForm class to validate
+    """
+    file = forms.FileField()
+
+
+def save_uploaded_file(f):
+    with open('input.json', 'wb+') as destination:
+        for chunk in f.chunks():
+            destination.write(chunk)
+
+    return 'input.json'
+
+
+def insert_external_data(filename):
+    with open(filename, 'r') as f_open:
+        json_str_arr = f_open.readline()
+    arr = json.loads(json_str_arr)
+    many = False
+    if isinstance(arr, list):
+        many = True
+
+    incoming_serializer = HarvestedMouseSerializer(data=arr, many=many)
+    if incoming_serializer.is_valid():
+        incoming_serializer.save()
+        return Response(incoming_serializer.data, status=status.HTTP_200_OK)
+    else:
+        return Response(incoming_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
