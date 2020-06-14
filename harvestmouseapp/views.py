@@ -6,7 +6,8 @@ from .models import HarvestedMouse
 from .serializers import HarvestedMouseSerializer
 from django import forms
 import json
-
+from datetime import datetime, timedelta
+import pandas as pd
 
 # With api view wrapper, method validation is auto-checked
 # wrong API request will auto return Unathorized method
@@ -108,7 +109,7 @@ def harvested_all_mouse_delete(request):
 @api_view(['POST'])
 def harvested_import_mouse(request):
     form = UploadFileForm(request.POST, request.FILES)
-    if form.is_valid():
+    if form.is_valid() and request.FILES['file'].name.endswith('.csv'):
         filename = save_uploaded_file(request.FILES['file'])
         return insert_external_data(filename)
     return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -148,17 +149,51 @@ class UploadFileForm(forms.Form):
 
 
 def save_uploaded_file(f):
-    with open('input.json', 'wb+') as destination:
+    with open('input.csv', 'wb+') as destination:
         for chunk in f.chunks():
             destination.write(chunk)
 
-    return 'input.json'
+    return 'input.csv'
+
+
+def convert_csv_to_json_arr(filename):
+    csv_file = pd.read_csv(filename)
+
+    csv_file = csv_file.fillna('No Data')
+
+    arr = []
+
+    for index, row in csv_file.iterrows():
+        gender = row['gender']
+        if gender == 'Male':
+            gender = 'M'
+        else:
+            gender = 'F'
+
+        birthDate = datetime.strptime(row['birthdate'], '%m-%d-%Y')
+        endDate = datetime.strptime(row['End date'], '%m-%d-%Y')
+
+        data = {
+            'handler': row['Handled by'],
+            'physicalId': row['physical_id'],
+            'gender': gender,
+            'mouseLine': row['mouseline'],
+            'genoType': row['Genotype'],
+            'birthDate': str(birthDate.date()),
+            'endDate': str(endDate.date()),
+            'confirmationOfGenoType': row['Confirmation of genotype'],
+            'phenoType': row['phenotype'],
+            'projectTitle': row['project_title'],
+            'experiment': row['Experiment'],
+            'comment': row['comment']
+        }
+        arr.append(data)
+
+    return arr
 
 
 def insert_external_data(filename):
-    with open(filename, 'r') as f_open:
-        json_str_arr = f_open.readline()
-    arr = json.loads(json_str_arr)
+    arr = convert_csv_to_json_arr(filename)
     many = False
     if isinstance(arr, list):
         many = True
@@ -170,6 +205,32 @@ def insert_external_data(filename):
     else:
         return Response(incoming_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'])
+def get_data_option_list(self):
+    # Get the list of mouse object first
+    harvesedMouseList = HarvestedMouse.objects.all()
+    harvesedMouseList = list(harvesedMouseList)
+    mouseLineList = []
+    genoTypeList = []
+    phenoTypeList = []
+    projectTitleList = []
+    handlerList = []
+    ExperiementList = []
+    data = {}
 
+    for harvestedMouse in harvesedMouseList:
+        mouseLineList.append(harvestedMouse.mouseLine)
+        genoTypeList.append(harvestedMouse.genoType)
+        phenoTypeList.append(harvestedMouse.phenoType)
+        projectTitleList.append(harvestedMouse.projectTitle)
+        handlerList.append(harvestedMouse.handler)
+        ExperiementList.append(harvestedMouse.experiment)
 
+    data['mouseLineList'] = list(set(mouseLineList))
+    data['genoTypeList'] = list(set(genoTypeList))
+    data['phenoTypeList'] = list(set(phenoTypeList))
+    data['projectTitleList'] = list(set(projectTitleList))
+    data['handlerList'] = list(set(handlerList))
+    data['ExperiementList'] = list(set(ExperiementList))
 
+    return Response(data)

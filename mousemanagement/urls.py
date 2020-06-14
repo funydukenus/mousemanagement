@@ -21,6 +21,7 @@ from harvestmouseapp.views import harvested_mouse_update
 from harvestmouseapp.views import harvested_mouse_delete
 from harvestmouseapp.views import harvested_all_mouse_delete
 from harvestmouseapp.views import harvested_import_mouse
+from harvestmouseapp.views import get_data_option_list
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -30,4 +31,5 @@ urlpatterns = [
     path('harvestedmouse/delete', harvested_mouse_delete),
     path('harvestedmouse/delete/all', harvested_all_mouse_delete),
     path('harvestedmouse/import', harvested_import_mouse),
+    path('harvestedmouse/getdatalist', get_data_option_list)
 ]

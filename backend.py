@@ -72,7 +72,7 @@ def import_csv_into_db():
                 'handler': row['Handled by'],
                 'physicalId': row['physical_id'],
                 'gender': gender,
-                'mouseLine': row['physical_id'],
+                'mouseLine': row['mouseLine'],
                 'genoType': row['Genotype'],
                 'birthDate': str(birthdate.date()),
                 'endDate': str(endDate.date()),
