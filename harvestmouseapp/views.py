@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .models import HarvestedMouse
-from .serializers import HarvestedMouseSerializer
+from .serializers import HarvestedMouseSerializer, HarvestedBasedNumberSerializer, HarvestedAdvancedNumberSerializer
 from django import forms
 import json
 from datetime import datetime, timedelta
@@ -47,6 +47,7 @@ def harvested_mouse_insertion(request):
     data = request.data.get("harvestedmouselist") if 'harvestedmouselist' in request.data else request.data
     many = isinstance(data, list)
     incoming_serializer = HarvestedMouseSerializer(data=data, many=many)
+
     if incoming_serializer.is_valid():
         incoming_serializer.save()
         return Response(incoming_serializer.data, status=status.HTTP_201_CREATED)

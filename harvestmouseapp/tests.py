@@ -4,7 +4,7 @@ from .views import harvested_mouse_list
 from .views import harvested_mouse_insertion
 from .views import harvested_mouse_update
 from .views import harvested_mouse_delete
-from .models import HarvestedMouse
+from .models import HarvestedMouse, HarvestedBasedNumber, HarvestedAdvancedNumber
 from datetime import datetime, timedelta
 
 
@@ -14,10 +14,14 @@ from datetime import datetime, timedelta
 #              This function provide the functionality to which to match the provided target value with the data in the
 #              given response data
 ############################################
-def is_match_data(response, keyword, target):
+def is_match_data(response, keyword, target, child_keyword=None):
     for raw_data in response.data:
-        if raw_data[keyword] == target:
-            return True
+        if not child_keyword:
+            if raw_data[keyword] == target:
+                return True
+        else:
+            if raw_data[keyword][child_keyword] == target:
+                return True
     return False
 
 
@@ -27,9 +31,12 @@ def is_match_data(response, keyword, target):
 #              to delete a list of objects in the listToMatched
 #              with corresponding objects in the data of the response
 ############################################
-def remove_if_matched(response, keyword, list_to_matched):
+def remove_if_matched(response, keyword, list_to_matched, child_keyword=None):
     for raw_data in response.data:
-        target_value = raw_data[keyword]
+        if not child_keyword:
+            target_value = raw_data[keyword]
+        else:
+            target_value = raw_data[keyword][child_keyword]
         if target_value in list_to_matched:
             list_to_matched.remove(target_value)
 
@@ -66,7 +73,7 @@ def make_request_and_check(test_cases, data, url, request_object, expected_statu
 ############################################
 def check_model_view_objects(test_cases, view_list_class, view_url, expect_num_of_return, list_to_matched,
                              expect_num_of_remain, keyword, remove_involved=True, target=None, find_matched=False,
-                             is_view_class=False, data=None):
+                             is_view_class=False, data=None, child_keyword=None):
     # Check if the return of list of users matched with the listToMatched
 
     # Create an instance of GET requests
@@ -89,7 +96,7 @@ def check_model_view_objects(test_cases, view_list_class, view_url, expect_num_o
     if len(response.data) == expect_num_of_return:
         # Remove all the user in the listToMatched if it exists in the data of the response
         if remove_involved:
-            remove_if_matched(response, keyword, list_to_matched)
+            remove_if_matched(response, keyword, list_to_matched, child_keyword)
             # If the list is not empty,
             # it means the list getting from the
             # view is incorrect
@@ -97,10 +104,10 @@ def check_model_view_objects(test_cases, view_list_class, view_url, expect_num_o
                 test_cases.assertTrue(False)
         else:
             if find_matched:
-                if not(is_match_data(response, keyword, target)):
+                if not(is_match_data(response, keyword, target, child_keyword)):
                     test_cases.assertTrue(False)
             else:
-                if is_match_data(response, keyword, target):
+                if is_match_data(response, keyword, target, child_keyword):
                     test_cases.assertTrue(False)
 
     else:
@@ -135,7 +142,30 @@ class HarvestedMouseTestCase(TestCase):
             experiment='experiementTesting',
             comment='comment1'
         )
+
         harvested_mouse.save()
+
+        freeze_record = HarvestedBasedNumber(
+            harvestedMouseId=harvested_mouse,
+            liver=1,
+            liverTumor=1,
+            others='3'
+        )
+
+        freeze_record.save()
+
+        pfa_record = HarvestedAdvancedNumber(
+            harvestedMouseId=harvested_mouse,
+            liver=1,
+            liverTumor=1,
+            smallIntestine=1,
+            smallIntestineTumor=1,
+            skin=1,
+            skinHair=1,
+            others='5'
+        )
+
+        pfa_record.save()
 
     # Pass requirement
     # 1. create the user with required field
@@ -154,7 +184,23 @@ class HarvestedMouseTestCase(TestCase):
             'phenoType': 'phenoType1',
             'projectTitle': 'projectTitle1',
             'experiment': 'experiement1',
-            'comment': 'comment1'
+            'comment': 'comment1',
+            'freezeRecord': {
+                'physicalId': '12345679',
+                'liver': 1,
+                'liverTumor': 1,
+                'others': 1
+            },
+            'pfaRecord': {
+                'physicalId': '12345679',
+                'liver': 1,
+                'liverTumor': 1,
+                'smallIntestine':1,
+                'smallIntestineTumor': 1,
+                'skin': 1,
+                'skinHair': 1,
+                'others': 1
+            }
         }
 
         # Make the request and check for the status code
@@ -201,7 +247,23 @@ class HarvestedMouseTestCase(TestCase):
             'phenoType': 'phenoType1',
             'projectTitle': 'projectTitle1',
             'experiment': 'experiement1',
-            'comment': 'comment1'
+            'comment': 'comment1',
+            'freezeRecord': {
+                'physicalId': '12345679',
+                'liver': 1,
+                'liverTumor': 1,
+                'others': 1
+            },
+            'pfaRecord': {
+                'physicalId': '12345679',
+                'liver': 1,
+                'liverTumor': 1,
+                'smallIntestine': 1,
+                'smallIntestineTumor': 1,
+                'skin': 1,
+                'skinHair': 1,
+                'others': 1
+            }
         }
 
         # Make the request and check for the status code
@@ -218,7 +280,7 @@ class HarvestedMouseTestCase(TestCase):
         # from the first and second entry
         data_to_post = {
             'handler': 'handler2',
-            'physicalId': '12345679',
+            'physicalId': '1234567A',
             'gender': 'M',
             'mouseLine': 'mouseLine1',
             'genoType': 'genoType1',
@@ -228,7 +290,23 @@ class HarvestedMouseTestCase(TestCase):
             'phenoType': 'phenoType1',
             'projectTitle': 'projectTitle1',
             'experiment': 'experiement1',
-            'comment': 'comment1'
+            'comment': 'comment1',
+            'freezeRecord': {
+                'physicalId': '1234567A',
+                'liver': 1,
+                'liverTumor': 1,
+                'others': 1
+            },
+            'pfaRecord': {
+                'physicalId': '1234567A',
+                'liver': 1,
+                'liverTumor': 1,
+                'smallIntestine': 1,
+                'smallIntestineTumor': 1,
+                'skin': 1,
+                'skinHair': 1,
+                'others': 1
+            }
         }
 
         # Make the request and check for the status code
@@ -294,7 +372,7 @@ class HarvestedMouseTestCase(TestCase):
 
             data_to_post = {
                 'handler': 'handler' + str(i),
-                'physicalId': '12345679',
+                'physicalId': '1234567A'+ str(i),
                 'gender': 'M',
                 'mouseLine': 'mouseLine1',
                 'genoType': 'genoType1',
@@ -304,7 +382,23 @@ class HarvestedMouseTestCase(TestCase):
                 'phenoType': pheno,
                 'projectTitle': 'projectTitle1',
                 'experiment': experiment,
-                'comment': 'comment1'
+                'comment': 'comment1',
+                'freezeRecord': {
+                    'physicalId': '1234567A'+ str(i),
+                    'liver': 1,
+                    'liverTumor': 1,
+                    'others': 1
+                },
+                'pfaRecord': {
+                    'physicalId': '1234567A'+ str(i),
+                    'liver': 1,
+                    'liverTumor': 1,
+                    'smallIntestine': 1,
+                    'smallIntestineTumor': 1,
+                    'skin': 1,
+                    'skinHair': 1,
+                    'others': 1
+                }
             }
 
             # Make the request and check for the status code
@@ -358,7 +452,7 @@ class HarvestedMouseTestCase(TestCase):
         list_to_matched = []
 
         specific_date = datetime.now()
-        for i in range(group_1_start,group_2_stop):
+        for i in range(group_1_start, group_2_stop):
 
             cur_date = datetime.now().date() + timedelta(days=i)
 
@@ -370,7 +464,7 @@ class HarvestedMouseTestCase(TestCase):
 
             data_to_post = {
                 'handler': 'handler' + str(i),
-                'physicalId': '12345679',
+                'physicalId': '1234567A' + str(i),
                 'gender': 'M',
                 'mouseLine': 'mouseLine1',
                 'genoType': 'genoType1',
@@ -380,7 +474,23 @@ class HarvestedMouseTestCase(TestCase):
                 'phenoType': 'phenoType1',
                 'projectTitle': 'projectTitle1',
                 'experiment': 'Experiment1',
-                'comment': 'comment1'
+                'comment': 'comment1',
+                'freezeRecord': {
+                    'physicalId': '1234567A' + str(i),
+                    'liver': 1,
+                    'liverTumor': 1,
+                    'others': 1
+                },
+                'pfaRecord': {
+                    'physicalId': '1234567A' + str(i),
+                    'liver': 1,
+                    'liverTumor': 1,
+                    'smallIntestine': 1,
+                    'smallIntestineTumor': 1,
+                    'skin': 1,
+                    'skinHair': 1,
+                    'others': 1
+                }
             }
 
             # Make the request and check for the status code
@@ -430,7 +540,6 @@ class HarvestedMouseTestCase(TestCase):
             }
         )
 
-
     # Pass requirement
     # 1. Insert multiple mouses at one time
     # 2. matched with the required field set
@@ -442,11 +551,11 @@ class HarvestedMouseTestCase(TestCase):
         group_start = 0
         group_stop = 8
 
-        for i in range(group_start,group_stop):
+        for i in range(group_start, group_stop):
             list_to_matched.append('handler' + str(i))
             data_to_post = {
                 'handler': 'handler' + str(i),
-                'physicalId': '12345679',
+                'physicalId': '1234567A' + str(i),
                 'gender': 'M',
                 'mouseLine': 'mouseLine1',
                 'genoType': 'genoType1',
@@ -456,14 +565,28 @@ class HarvestedMouseTestCase(TestCase):
                 'phenoType': 'phenoType1',
                 'projectTitle': 'projectTitle1',
                 'experiment': 'Experiment1',
-                'comment': 'comment1'
+                'comment': 'comment1',
+                'freezeRecord': {
+                    'physicalId': '1234567A' + str(i),
+                    'liver': 1,
+                    'liverTumor': 1,
+                    'others': 1
+                },
+                'pfaRecord': {
+                    'physicalId': '1234567A' + str(i),
+                    'liver': 1,
+                    'liverTumor': 1,
+                    'smallIntestine': 1,
+                    'smallIntestineTumor': 1,
+                    'skin': 1,
+                    'skinHair': 1,
+                    'others': 1
+                }
             }
 
             arr.append(data_to_post)
 
-        data = {}
-        data['harvestedmouselist'] = arr
-
+        data = {'harvestedmouselist': arr}
 
         # Make the request and check for the status code
         make_request_and_check(
@@ -502,9 +625,24 @@ class HarvestedMouseTestCase(TestCase):
             'phenoType': 'phenoType1',
             'projectTitle': 'projectTitle1',
             'experiment': 'Experiment1',
-            'comment': 'comment1'
+            'comment': 'comment1',
+            'freezeRecord': {
+                'physicalId': '12345679',
+                'liver': 1,
+                'liverTumor': 1,
+                'others': 1
+            },
+            'pfaRecord': {
+                'physicalId': '12345679',
+                'liver': 1,
+                'liverTumor': 1,
+                'smallIntestine': 1,
+                'smallIntestineTumor': 1,
+                'skin': 1,
+                'skinHair': 1,
+                'others': 1
+            }
         }
-
 
         # Make the request and check for the status code
         response = make_request_and_check(
@@ -520,6 +658,9 @@ class HarvestedMouseTestCase(TestCase):
 
         # Change handler to handler2
         data_to_post['handler'] = 'handler2'
+
+        # Change pfaRecord.smallIntestineTumor to 15
+        data_to_post['pfaRecord']['smallIntestineTumor'] = 15
 
         # Make the request and check for the status code
         response = make_request_and_check(
@@ -542,6 +683,18 @@ class HarvestedMouseTestCase(TestCase):
             keyword='handler'
         )
 
+        # The remaining should be 0
+        check_model_view_objects(
+            test_cases=self,
+            view_list_class=harvested_mouse_list,
+            view_url='/harvestedmouse/list',
+            expect_num_of_return=2,
+            list_to_matched=[1, 15],
+            expect_num_of_remain=0,
+            keyword='pfaRecord',
+            child_keyword='smallIntestineTumor'
+        )
+
     # Pass requirement
     # 1. Insert multiple mouses at one time
     # 2. matched with the required field set
@@ -558,12 +711,28 @@ class HarvestedMouseTestCase(TestCase):
             'phenoType': 'phenoType1',
             'projectTitle': 'projectTitle1',
             'experiment': 'Experiment1',
-            'comment': 'comment1'
+            'comment': 'comment1',
+            'freezeRecord': {
+                'physicalId': '12345679',
+                'liver': 1,
+                'liverTumor': 1,
+                'others': 1
+            },
+            'pfaRecord': {
+                'physicalId': '12345679',
+                'liver': 1,
+                'liverTumor': 1,
+                'smallIntestine': 1,
+                'smallIntestineTumor': 1,
+                'skin': 1,
+                'skinHair': 1,
+                'others': 1
+            }
         }
 
         data_to_post_3 = {
             'handler': 'handler3',
-            'physicalId': '12345679',
+            'physicalId': '1234567B',
             'gender': 'M',
             'mouseLine': 'mouseLine1',
             'genoType': 'genoType1',
@@ -573,10 +742,25 @@ class HarvestedMouseTestCase(TestCase):
             'phenoType': 'phenoType1',
             'projectTitle': 'projectTitle1',
             'experiment': 'Experiment1',
-            'comment': 'comment1'
+            'comment': 'comment1',
+            'freezeRecord': {
+                'physicalId': '1234567B',
+                'liver': 1,
+                'liverTumor': 1,
+                'others': 1
+            },
+            'pfaRecord': {
+                'physicalId': '1234567B',
+                'liver': 1,
+                'liverTumor': 1,
+                'smallIntestine': 1,
+                'smallIntestineTumor': 1,
+                'skin': 1,
+                'skinHair': 1,
+                'others': 1
+            }
         }
-        data_arr = {}
-        data_arr['harvestedmouselist'] = []
+        data_arr = {'harvestedmouselist': []}
         data_arr['harvestedmouselist'].append(data_to_post_2)
         data_arr['harvestedmouselist'].append(data_to_post_3)
 
@@ -599,6 +783,11 @@ class HarvestedMouseTestCase(TestCase):
         # Change handler to handler2
         data_to_post_3['projectTitle'] = 'CBA'
 
+        # Change pfaRecord.smallIntestineTumor to 16
+        data_to_post_2['pfaRecord']['smallIntestineTumor'] = 16
+        # Change pfaRecord.smallIntestineTumor to 15
+        data_to_post_3['pfaRecord']['smallIntestineTumor'] = 15
+
         # Make the request and check for the status code
         response = make_request_and_check(
                        test_cases=self,
@@ -619,13 +808,26 @@ class HarvestedMouseTestCase(TestCase):
             expect_num_of_remain=0,
             keyword='projectTitle'
         )
+
+        # The remaining should be 0
+        check_model_view_objects(
+            test_cases=self,
+            view_list_class=harvested_mouse_list,
+            view_url='/harvestedmouse/list',
+            expect_num_of_return=3,
+            list_to_matched=[1, 16, 15],
+            expect_num_of_remain=0,
+            keyword='pfaRecord',
+            child_keyword='smallIntestineTumor'
+        )
+
     # Pass requirement
     # 1. Delete inserted mouse handler2
     # 2. handler 2 should not exists in the list
     def test_harvest_mouse_delete(self):
         data_to_post = {
             'handler': 'handler2',
-            'physicalId': '12345679',
+            'physicalId': '1234567B',
             'gender': 'M',
             'mouseLine': 'mouseLine1',
             'genoType': 'genoType1',
@@ -635,7 +837,23 @@ class HarvestedMouseTestCase(TestCase):
             'phenoType': 'phenoType1',
             'projectTitle': 'projectTitle1',
             'experiment': 'Experiment1',
-            'comment': 'comment1'
+            'comment': 'comment1',
+            'freezeRecord': {
+                'physicalId': '1234567B',
+                'liver': 1,
+                'liverTumor': 1,
+                'others': 1
+            },
+            'pfaRecord': {
+                'physicalId': '1234567B',
+                'liver': 1,
+                'liverTumor': 1,
+                'smallIntestine': 1,
+                'smallIntestineTumor': 1,
+                'skin': 1,
+                'skinHair': 1,
+                'others': 1
+            }
         }
 
         # Make the request and check for the status code
@@ -694,7 +912,7 @@ class HarvestedMouseTestCase(TestCase):
     def test_advanced_harvest_mouse_multiple_delete(self):
         data_to_post_2 = {
             'handler': 'handler2',
-            'physicalId': '12345679',
+            'physicalId': '1234567B',
             'gender': 'M',
             'mouseLine': 'mouseLine1',
             'genoType': 'genoType1',
@@ -704,7 +922,23 @@ class HarvestedMouseTestCase(TestCase):
             'phenoType': 'phenoType1',
             'projectTitle': 'projectTitle1',
             'experiment': 'Experiment1',
-            'comment': 'comment1'
+            'comment': 'comment1',
+            'freezeRecord': {
+                'physicalId': '1234567B',
+                'liver': 1,
+                'liverTumor': 1,
+                'others': 1
+            },
+            'pfaRecord': {
+                'physicalId': '1234567B',
+                'liver': 1,
+                'liverTumor': 1,
+                'smallIntestine': 1,
+                'smallIntestineTumor': 1,
+                'skin': 1,
+                'skinHair': 1,
+                'others': 1
+            }
         }
 
         # Make the request and check for the status code
@@ -722,7 +956,7 @@ class HarvestedMouseTestCase(TestCase):
 
         data_to_post_3 = {
             'handler': 'handler3',
-            'physicalId': '12345679',
+            'physicalId': '1234567C',
             'gender': 'M',
             'mouseLine': 'mouseLine1',
             'genoType': 'genoType1',
@@ -732,7 +966,23 @@ class HarvestedMouseTestCase(TestCase):
             'phenoType': 'phenoType1',
             'projectTitle': 'projectTitle1',
             'experiment': 'Experiment1',
-            'comment': 'comment1'
+            'comment': 'comment1',
+            'freezeRecord': {
+                'physicalId': '1234567C',
+                'liver': 1,
+                'liverTumor': 1,
+                'others': 1
+            },
+            'pfaRecord': {
+                'physicalId': '1234567C',
+                'liver': 1,
+                'liverTumor': 1,
+                'smallIntestine': 1,
+                'smallIntestineTumor': 1,
+                'skin': 1,
+                'skinHair': 1,
+                'others': 1
+            }
         }
 
         # Make the request and check for the status code
@@ -748,7 +998,6 @@ class HarvestedMouseTestCase(TestCase):
 
         data_to_post_3['id'] = response.data['id']
 
-
         # After inserted 2 mice
         # there will be 3 mouses handler1,handler2 and handler3
         # The remaining should be 0
@@ -762,12 +1011,10 @@ class HarvestedMouseTestCase(TestCase):
             keyword='handler'
         )
 
-        arr = []
-        arr.append(data_to_post_2)
-        arr.append(data_to_post_3)
+        arr = [data_to_post_2, data_to_post_3]
 
         # Delete handler 2 and handler 3
-       # Make request to delete the handler 2 mouse
+        # Make request to delete the handler 2 mouse
         # Make the request and check for the status code
         response = make_request_and_check(
                        test_cases=self,
@@ -778,7 +1025,7 @@ class HarvestedMouseTestCase(TestCase):
                        view_class=harvested_mouse_delete
                    )
 
-       # After deleted handler2 and handler 3mouse
+        # After deleted handler2 and handler 3mouse
         # only handler1 remained
         # The remaining should be 0
         check_model_view_objects(
