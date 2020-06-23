@@ -1,13 +1,12 @@
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
 from .models import HarvestedMouse
-from .serializers import HarvestedMouseSerializer, HarvestedBasedNumberSerializer, HarvestedAdvancedNumberSerializer
+from .serializers import HarvestedMouseSerializer
 from django import forms
-import json
-from datetime import datetime, timedelta
+from datetime import datetime
 import pandas as pd
+
 
 # With api view wrapper, method validation is auto-checked
 # wrong API request will auto return Unathorized method
@@ -16,7 +15,7 @@ def harvested_mouse_list(request):
     """
     List all the harvested mouse
     """
-    harvested_mouse_list = HarvestedMouse.objects.all()
+    harvested_mouse_list_arr = HarvestedMouse.objects.all()
 
     if request.query_params:
         filter_set = {}
@@ -33,9 +32,9 @@ def harvested_mouse_list(request):
             elif comp == '4':
                 comp = '__startswith'
             filter_set[key + comp] = value_key_word
-        harvested_mouse_list = harvested_mouse_list.filter(**filter_set)
+        harvested_mouse_list_arr = harvested_mouse_list_arr.filter(**filter_set)
 
-    harvested_mouse_serializer = HarvestedMouseSerializer(harvested_mouse_list, many=True)
+    harvested_mouse_serializer = HarvestedMouseSerializer(harvested_mouse_list_arr, many=True)
     return Response(harvested_mouse_serializer.data)
 
 
@@ -93,6 +92,7 @@ def harvested_mouse_delete(request):
                 return Response(idx-1, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_200_OK)
+
 
 @api_view(['DELETE'])
 def harvested_all_mouse_delete(request):
@@ -170,9 +170,11 @@ def convert_csv_to_json_arr(filename):
             gender = 'M'
         else:
             gender = 'F'
-
-        birthDate = datetime.strptime(row['birthdate'], '%m-%d-%Y')
-        endDate = datetime.strptime(row['End date'], '%m-%d-%Y')
+        try:
+            birth_date = datetime.strptime(row['birthdate'], '%m-%d-%Y')
+            end_date = datetime.strptime(row['End date'], '%m-%d-%Y')
+        except ValueError:
+            continue
 
         data = {
             'handler': row['Handled by'],
@@ -180,13 +182,27 @@ def convert_csv_to_json_arr(filename):
             'gender': gender,
             'mouseLine': row['mouseline'],
             'genoType': row['Genotype'],
-            'birthDate': str(birthDate.date()),
-            'endDate': str(endDate.date()),
+            'birthDate': str(birth_date.date()),
+            'endDate': str(end_date.date()),
             'confirmationOfGenoType': row['Confirmation of genotype'],
             'phenoType': row['phenotype'],
             'projectTitle': row['project_title'],
             'experiment': row['Experiment'],
-            'comment': row['comment']
+            'comment': row['comment'],
+            'freezeRecord': {
+                'liver': row['Freeze Liver'],
+                'liverTumor': row['Freeze Liver tumour'],
+                'others': row['Freeze Others']
+            },
+            'pfaRecord': {
+                'liver': row['PFA Liver'],
+                'liverTumor': row['PFA Liver tumour'],
+                'smallIntestine': row['PFA Small intestine'],
+                'smallIntestineTumor': row['PFA SI tumour'],
+                'skin': row['PFA Skin'],
+                'skinHair': row['PFA Skin_Hair'],
+                'others': row['PFA Others']
+            }
         }
         arr.append(data)
 
@@ -206,32 +222,32 @@ def insert_external_data(filename):
     else:
         return Response(incoming_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['GET'])
-def get_data_option_list(self):
+def get_data_option_list(request):
     # Get the list of mouse object first
-    harvesedMouseList = HarvestedMouse.objects.all()
-    harvesedMouseList = list(harvesedMouseList)
-    mouseLineList = []
-    genoTypeList = []
-    phenoTypeList = []
-    projectTitleList = []
-    handlerList = []
-    ExperiementList = []
+    harvesed_mouse_list = list(HarvestedMouse.objects.all())
+    mouseline_list = []
+    genotype_list = []
+    phenotype_list = []
+    projecttitle_list = []
+    handler_list = []
+    experiement_list = []
     data = {}
 
-    for harvestedMouse in harvesedMouseList:
-        mouseLineList.append(harvestedMouse.mouseLine)
-        genoTypeList.append(harvestedMouse.genoType)
-        phenoTypeList.append(harvestedMouse.phenoType)
-        projectTitleList.append(harvestedMouse.projectTitle)
-        handlerList.append(harvestedMouse.handler)
-        ExperiementList.append(harvestedMouse.experiment)
+    for harvestedMouse in harvesed_mouse_list:
+        mouseline_list.append(harvestedMouse.mouseLine)
+        genotype_list.append(harvestedMouse.genoType)
+        phenotype_list.append(harvestedMouse.phenoType)
+        projecttitle_list.append(harvestedMouse.projectTitle)
+        handler_list.append(harvestedMouse.handler)
+        experiement_list.append(harvestedMouse.experiment)
 
-    data['mouseLineList'] = list(set(mouseLineList))
-    data['genoTypeList'] = list(set(genoTypeList))
-    data['phenoTypeList'] = list(set(phenoTypeList))
-    data['projectTitleList'] = list(set(projectTitleList))
-    data['handlerList'] = list(set(handlerList))
-    data['ExperiementList'] = list(set(ExperiementList))
+    data['mouseLineList'] = list(set(mouseline_list))
+    data['genoTypeList'] = list(set(genotype_list))
+    data['phenoTypeList'] = list(set(phenotype_list))
+    data['projectTitleList'] = list(set(projecttitle_list))
+    data['handlerList'] = list(set(handler_list))
+    data['ExperiementList'] = list(set(experiement_list))
 
     return Response(data)

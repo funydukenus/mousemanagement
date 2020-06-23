@@ -14,7 +14,7 @@ class HarvestedMouse(models.Model):
     )
 
     handler = models.TextField()
-    physicalId = models.TextField()
+    physicalId = models.TextField(unique=True)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
     mouseLine = models.TextField()
     genoType = models.TextField()

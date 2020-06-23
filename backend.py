@@ -64,15 +64,16 @@ def import_csv_into_db():
                 gender = 'M'
             else:
                 gender = 'F'
-
-            birthdate = datetime.datetime.strptime(row['birthdate'], '%m-%d-%Y')
-            endDate = datetime.datetime.strptime(row['End date'], '%m-%d-%Y')
-
+            try:
+                birthdate = datetime.datetime.strptime(row['birthdate'], '%m-%d-%Y')
+                endDate = datetime.datetime.strptime(row['End date'], '%m-%d-%Y')
+            except ValueError:
+                continue
             data = {
                 'handler': row['Handled by'],
                 'physicalId': row['physical_id'],
                 'gender': gender,
-                'mouseLine': row['mouseLine'],
+                'mouseLine': row['mouseline'],
                 'genoType': row['Genotype'],
                 'birthDate': str(birthdate.date()),
                 'endDate': str(endDate.date()),
@@ -80,7 +81,21 @@ def import_csv_into_db():
                 'phenoType': row['phenotype'],
                 'projectTitle': row['project_title'],
                 'experiment': row['Experiment'],
-                'comment': row['comment']
+                'comment': row['comment'],
+                'freezeRecord': {
+                    'liver': row['Freeze Liver'],
+                    'liverTumor': row['Freeze Liver tumour'],
+                    'others': row['Freeze Others']
+                },
+                'pfaRecord': {
+                    'liver': row['PFA Liver'],
+                    'liverTumor': row['PFA Liver tumour'],
+                    'smallIntestine': row['PFA Small intestine'],
+                    'smallIntestineTumor': row['PFA SI tumour'],
+                    'skin': row['PFA Skin'],
+                    'skinHair': row['PFA Skin_Hair'],
+                    'others': row['PFA Others']
+                }
             }
             arr.append(data)
 
@@ -98,6 +113,7 @@ def import_csv_into_db():
     else:
         print('FAIL')
 
+
 def delete_all_from_db():
     print('Deleting all entries from db')
     # sending post request and saving response as response object
@@ -106,6 +122,7 @@ def delete_all_from_db():
         print('OKAY')
     else:
         print('FAIL')
+
 
 if __name__ == '__main__':
     gui_start()

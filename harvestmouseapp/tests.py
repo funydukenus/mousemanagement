@@ -48,12 +48,13 @@ def remove_if_matched(response, keyword, list_to_matched, child_keyword=None):
 #              it will check the correct status code with the provided
 #              status code
 ############################################
-def make_request_and_check(test_cases, data, url, request_object, expected_status_code, view_class, is_view_class=False):
+def make_request_and_check(test_cases, data, url, request_object, expected_status_code, view_class,
+                           is_view_class=False):
     request = request_object(
-                path=url,
-                data=data,
-                format='json'
-              )
+        path=url,
+        data=data,
+        format='json'
+    )
     if is_view_class:
         response = view_class.as_view()(request, *[], **{})
     else:
@@ -100,11 +101,11 @@ def check_model_view_objects(test_cases, view_list_class, view_url, expect_num_o
             # If the list is not empty,
             # it means the list getting from the
             # view is incorrect
-            if not(len(list_to_matched) == expect_num_of_remain):
+            if not (len(list_to_matched) == expect_num_of_remain):
                 test_cases.assertTrue(False)
         else:
             if find_matched:
-                if not(is_match_data(response, keyword, target, child_keyword)):
+                if not (is_match_data(response, keyword, target, child_keyword)):
                     test_cases.assertTrue(False)
             else:
                 if is_match_data(response, keyword, target, child_keyword):
@@ -195,7 +196,7 @@ class HarvestedMouseTestCase(TestCase):
                 'physicalId': '12345679',
                 'liver': 1,
                 'liverTumor': 1,
-                'smallIntestine':1,
+                'smallIntestine': 1,
                 'smallIntestineTumor': 1,
                 'skin': 1,
                 'skinHair': 1,
@@ -353,15 +354,14 @@ class HarvestedMouseTestCase(TestCase):
 
         group_1_start = 0
         group_1_stop = 4
-        group_2_start = 5
         group_2_stop = 8
 
         list_to_matched = []
 
-        for i in range(group_1_start,group_2_stop):
+        for i in range(group_1_start, group_2_stop):
             if i <= group_1_stop:
                 experiment = experiment_1
-                if i <= group_1_stop-2:
+                if i <= group_1_stop - 2:
                     pheno = special_pheno
                     list_to_matched.append('handler' + str(i))
                 else:
@@ -372,7 +372,7 @@ class HarvestedMouseTestCase(TestCase):
 
             data_to_post = {
                 'handler': 'handler' + str(i),
-                'physicalId': '1234567A'+ str(i),
+                'physicalId': '1234567A' + str(i),
                 'gender': 'M',
                 'mouseLine': 'mouseLine1',
                 'genoType': 'genoType1',
@@ -384,13 +384,13 @@ class HarvestedMouseTestCase(TestCase):
                 'experiment': experiment,
                 'comment': 'comment1',
                 'freezeRecord': {
-                    'physicalId': '1234567A'+ str(i),
+                    'physicalId': '1234567A' + str(i),
                     'liver': 1,
                     'liverTumor': 1,
                     'others': 1
                 },
                 'pfaRecord': {
-                    'physicalId': '1234567A'+ str(i),
+                    'physicalId': '1234567A' + str(i),
                     'liver': 1,
                     'liverTumor': 1,
                     'smallIntestine': 1,
@@ -419,7 +419,7 @@ class HarvestedMouseTestCase(TestCase):
             test_cases=self,
             view_list_class=harvested_mouse_list,
             view_url='/harvestedmouse/list',
-            expect_num_of_return=group_1_stop-1,
+            expect_num_of_return=group_1_stop - 1,
             list_to_matched=list_to_matched,
             expect_num_of_remain=0,
             keyword='handler',
@@ -438,14 +438,7 @@ class HarvestedMouseTestCase(TestCase):
         # Insert with multiple handler 5 to 8 but with same Expr2
         # It should return handler 1 to handler 3 if filtered with Expr1
         # But exclude the default entry
-        experiment_1 = 'Expr1'
-        experiment_2 = 'Expr2'
-
-        normal_pheno = 'normal'
-        special_pheno = 'speical'
-
         group_1_start = 0
-        group_1_stop = 4
         group_2_start = 5
         group_2_stop = 8
 
@@ -646,13 +639,13 @@ class HarvestedMouseTestCase(TestCase):
 
         # Make the request and check for the status code
         response = make_request_and_check(
-                       test_cases=self,
-                       data=data_to_post,
-                       url='/harvestedmouse/insert',
-                       request_object=self.factory.post,
-                       expected_status_code=201,
-                       view_class=harvested_mouse_insertion
-                   )
+            test_cases=self,
+            data=data_to_post,
+            url='/harvestedmouse/insert',
+            request_object=self.factory.post,
+            expected_status_code=201,
+            view_class=harvested_mouse_insertion
+        )
 
         data_to_post['id'] = response.data['id']
 
@@ -663,14 +656,14 @@ class HarvestedMouseTestCase(TestCase):
         data_to_post['pfaRecord']['smallIntestineTumor'] = 15
 
         # Make the request and check for the status code
-        response = make_request_and_check(
-                       test_cases=self,
-                       data=data_to_post,
-                       url='/harvestedmouse/update',
-                       request_object=self.factory.put,
-                       expected_status_code=200,
-                       view_class=harvested_mouse_update
-                   )
+        make_request_and_check(
+            test_cases=self,
+            data=data_to_post,
+            url='/harvestedmouse/update',
+            request_object=self.factory.put,
+            expected_status_code=200,
+            view_class=harvested_mouse_update
+        )
 
         # The remaining should be 0
         check_model_view_objects(
@@ -766,13 +759,13 @@ class HarvestedMouseTestCase(TestCase):
 
         # Make the request and check for the status code
         response = make_request_and_check(
-                       test_cases=self,
-                       data=data_arr,
-                       url='/harvestedmouse/insert',
-                       request_object=self.factory.post,
-                       expected_status_code=201,
-                       view_class=harvested_mouse_insertion
-                   )
+            test_cases=self,
+            data=data_arr,
+            url='/harvestedmouse/insert',
+            request_object=self.factory.post,
+            expected_status_code=201,
+            view_class=harvested_mouse_insertion
+        )
 
         data_to_post_2['id'] = response.data[0]['id']
         data_to_post_3['id'] = response.data[1]['id']
@@ -789,14 +782,14 @@ class HarvestedMouseTestCase(TestCase):
         data_to_post_3['pfaRecord']['smallIntestineTumor'] = 15
 
         # Make the request and check for the status code
-        response = make_request_and_check(
-                       test_cases=self,
-                       data=data_arr,
-                       url='/harvestedmouse/update',
-                       request_object=self.factory.put,
-                       expected_status_code=200,
-                       view_class=harvested_mouse_update
-                   )
+        make_request_and_check(
+            test_cases=self,
+            data=data_arr,
+            url='/harvestedmouse/update',
+            request_object=self.factory.put,
+            expected_status_code=200,
+            view_class=harvested_mouse_update
+        )
 
         # The remaining should be 0
         check_model_view_objects(
@@ -859,13 +852,13 @@ class HarvestedMouseTestCase(TestCase):
         # Make the request and check for the status code
         # Insert handler 2 mouse into db
         response = make_request_and_check(
-                       test_cases=self,
-                       data=data_to_post,
-                       url='/harvestedmouse/insert',
-                       request_object=self.factory.post,
-                       expected_status_code=201,
-                       view_class=harvested_mouse_insertion
-                   )
+            test_cases=self,
+            data=data_to_post,
+            url='/harvestedmouse/insert',
+            request_object=self.factory.post,
+            expected_status_code=201,
+            view_class=harvested_mouse_insertion
+        )
 
         data_to_post['id'] = response.data['id']
 
@@ -884,14 +877,14 @@ class HarvestedMouseTestCase(TestCase):
 
         # Make request to delete the handler 2 mouse
         # Make the request and check for the status code
-        response = make_request_and_check(
-                       test_cases=self,
-                       data=data_to_post,
-                       url='/harvestedmouse/delete',
-                       request_object=self.factory.delete,
-                       expected_status_code=200,
-                       view_class=harvested_mouse_delete
-                   )
+        make_request_and_check(
+            test_cases=self,
+            data=data_to_post,
+            url='/harvestedmouse/delete',
+            request_object=self.factory.delete,
+            expected_status_code=200,
+            view_class=harvested_mouse_delete
+        )
 
         # After deleted handler2 mouse
         # only handler1 remained
@@ -944,13 +937,13 @@ class HarvestedMouseTestCase(TestCase):
         # Make the request and check for the status code
         # Insert handler 2 mouse into db
         response = make_request_and_check(
-                       test_cases=self,
-                       data=data_to_post_2,
-                       url='/harvestedmouse/insert',
-                       request_object=self.factory.post,
-                       expected_status_code=201,
-                       view_class=harvested_mouse_insertion
-                   )
+            test_cases=self,
+            data=data_to_post_2,
+            url='/harvestedmouse/insert',
+            request_object=self.factory.post,
+            expected_status_code=201,
+            view_class=harvested_mouse_insertion
+        )
 
         data_to_post_2['id'] = response.data['id']
 
@@ -988,13 +981,13 @@ class HarvestedMouseTestCase(TestCase):
         # Make the request and check for the status code
         # Insert handler 2 mouse into db
         response = make_request_and_check(
-                       test_cases=self,
-                       data=data_to_post_3,
-                       url='/harvestedmouse/insert',
-                       request_object=self.factory.post,
-                       expected_status_code=201,
-                       view_class=harvested_mouse_insertion
-                   )
+            test_cases=self,
+            data=data_to_post_3,
+            url='/harvestedmouse/insert',
+            request_object=self.factory.post,
+            expected_status_code=201,
+            view_class=harvested_mouse_insertion
+        )
 
         data_to_post_3['id'] = response.data['id']
 
@@ -1016,14 +1009,14 @@ class HarvestedMouseTestCase(TestCase):
         # Delete handler 2 and handler 3
         # Make request to delete the handler 2 mouse
         # Make the request and check for the status code
-        response = make_request_and_check(
-                       test_cases=self,
-                       data=arr,
-                       url='/harvestedmouse/delete',
-                       request_object=self.factory.delete,
-                       expected_status_code=200,
-                       view_class=harvested_mouse_delete
-                   )
+        make_request_and_check(
+            test_cases=self,
+            data=arr,
+            url='/harvestedmouse/delete',
+            request_object=self.factory.delete,
+            expected_status_code=200,
+            view_class=harvested_mouse_delete
+        )
 
         # After deleted handler2 and handler 3mouse
         # only handler1 remained
