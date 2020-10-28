@@ -38,7 +38,6 @@ psycopg2==2.8.4
 public==2019.4.13
 py==1.8.1
 pydot==1.4.1
-pygraphviz==1.5
 PyHamcrest==2.0.2
 pyparsing==2.4.7
 pyrsistent==0.16.0
