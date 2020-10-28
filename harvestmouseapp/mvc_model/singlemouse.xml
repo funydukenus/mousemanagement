@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mouselist>
+<mouse>
+   <physical_id>abc</physical_id>
+   <handler>Shih Han</handler>
+   <gender>Male</gender>
+   <mouseline>mouseline1</mouseline>
+   <genotype>genotype1</genotype>
+   <birth_date>2020-06-11</birth_date>
+   <end_date>2020-05-21</end_date>
+   <cog>1</cog>
+   <phenotype>Phenotyp1</phenotype>
+   <project_title>abc</project_title>
+   <comment>comment1</comment>
+</mouse>
+</mouselist>

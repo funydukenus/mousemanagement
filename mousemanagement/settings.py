@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
-    'harvestmouseapp.apps.HarvestmouseappConfig'
+    'harvestmouseapp.apps.HarvestmouseappConfig',
+    'django_extensions'
 ]
 
 MIDDLEWARE = [
@@ -65,7 +66,7 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
-    'enctype'
+    'enctype',
 ]
 
 REST_FRAMEWORK = {
@@ -144,3 +145,4 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+

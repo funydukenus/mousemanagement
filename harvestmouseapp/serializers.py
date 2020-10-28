@@ -67,6 +67,7 @@ class HarvestedMouseSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         # Call the super to transform model to Harvested Mouse representation
+        # Getting only the representation of the harvested mouse
         data = super(HarvestedMouseSerializer, self).to_representation(instance)
 
         # Get the corresponding harvest based number object
