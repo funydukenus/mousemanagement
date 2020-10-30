@@ -13,6 +13,7 @@ UPDATE_API_ENDPOINT = API_ENDPOINT + 'update'
 LIST_API_ENDPOINT   = API_ENDPOINT + 'list'
 DELETE_ALL_API_ENDPOINT = API_ENDPOINT + 'delete/all'
 
+
 # Start the console gui
 def gui_start():
     # Create the menu
@@ -39,14 +40,16 @@ def gui_start():
     # Finally, we call show to show the menu and allow the user to interact
     menu.show()
 
+
 def list_all_mouse_on_screen():
     print('Sending list command')
     # sending post request and saving response as response object
     r = requests.get(url=LIST_API_ENDPOINT)
     if r.status_code == 200:
-        with open('input.json', 'w') as f_open:
+        with open('output.csv', 'w') as f_open:
             f_open.writelines(r.text)
     print('Finished')
+
 
 def import_csv_into_db():
     input_file = 'input.csv'
@@ -56,7 +59,9 @@ def import_csv_into_db():
 
         csv_file = csv_file.fillna('No Data')
 
-        arr = []
+        dict = {'mouse_list': []}
+
+        arr = dict['mouse_list']
 
         for index, row in csv_file.iterrows():
             gender = row['gender']
@@ -64,27 +69,41 @@ def import_csv_into_db():
                 gender = 'M'
             else:
                 gender = 'F'
-
-            birthdate = datetime.datetime.strptime(row['birthdate'], '%m-%d-%Y')
-            endDate = datetime.datetime.strptime(row['End date'], '%m-%d-%Y')
-
+            try:
+                birthdate = datetime.datetime.strptime(row['birthdate'], '%m-%d-%Y')
+                endDate = datetime.datetime.strptime(row['End date'], '%m-%d-%Y')
+            except ValueError:
+                continue
             data = {
                 'handler': row['Handled by'],
-                'physicalId': row['physical_id'],
+                'physical_id': row['physical_id'],
                 'gender': gender,
-                'mouseLine': row['mouseLine'],
-                'genoType': row['Genotype'],
-                'birthDate': str(birthdate.date()),
-                'endDate': str(endDate.date()),
-                'confirmationOfGenoType': row['Confirmation of genotype'],
-                'phenoType': row['phenotype'],
-                'projectTitle': row['project_title'],
+                'mouseline': row['mouseline'],
+                'genotype': row['Genotype'],
+                'birth_date': str(birthdate.date()),
+                'end_date': str(endDate.date()),
+                'cog': row['Confirmation of genotype'],
+                'phenotype': row['phenotype'],
+                'project_title': row['project_title'],
                 'experiment': row['Experiment'],
-                'comment': row['comment']
+                'comment': row['comment'],
+                'freeze_record': {
+                    'liver': row['Freeze Liver'],
+                    'liver_tumor': row['Freeze Liver tumour'],
+                    'others': row['Freeze Others']
+                },
+                'pfa_record': {
+                    'liver': row['PFA Liver'],
+                    'liver_tumor': row['PFA Liver tumour'],
+                    'small_intenstine': row['PFA Small intestine'],
+                    'small_intenstine_tumor': row['PFA SI tumour'],
+                    'skin': row['PFA Skin'],
+                    'skin_tumor': row['PFA Skin_Hair'],
+                    'others': row['PFA Others']
+                }
             }
             arr.append(data)
-
-        jsonStr = json.dumps(arr)
+        arr = json.dumps(dict)
     else:
         json_str_arr = []
         with open(input_file, 'r') as f_open:
@@ -98,6 +117,7 @@ def import_csv_into_db():
     else:
         print('FAIL')
 
+
 def delete_all_from_db():
     print('Deleting all entries from db')
     # sending post request and saving response as response object
@@ -106,6 +126,7 @@ def delete_all_from_db():
         print('OKAY')
     else:
         print('FAIL')
+
 
 if __name__ == '__main__':
     gui_start()
