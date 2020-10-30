@@ -3,6 +3,23 @@ This module contains variery of model class
 to support the MVC model
 """
 import datetime
+from enum import Enum
+
+
+class ColumnList(Enum):
+    header_name = '_Mouse__'
+    PHYSICAL_ID_COL = header_name + 'physical_id'
+    HANDLER_COL = header_name + 'handler'
+    GENDER_COL = header_name + 'gender'
+    MOUSE_LINE_COL = header_name + 'mouseline'
+    GENOTYPE_COL = header_name + 'genotype'
+    BIRTH_DATE = header_name + 'birth_date'
+    END_DATE = header_name + 'end_date'
+    COG_DATE = header_name + 'cog'
+    PHENOTYPE = header_name + 'phenotype'
+    PROJECT_TITLE_COL = header_name + 'project_title'
+    EXPERIMENT_COL = header_name + 'experiment'
+    COMMENT_COL = header_name + 'comment'
 
 
 def replace_mouse_with_new_data(new_mouse_input, old_mouse_input):
@@ -15,6 +32,7 @@ def replace_mouse_with_new_data(new_mouse_input, old_mouse_input):
     old_mouse_input.cog = new_mouse_input.cog
     old_mouse_input.phenotype = new_mouse_input.phenotype
     old_mouse_input.project_title = new_mouse_input.project_title
+    old_mouse_input.experiment = new_mouse_input.experiment
     old_mouse_input.comment = new_mouse_input.comment
     replace_record_with_new_data(new_mouse_input.freeze_record, old_mouse_input.freeze_record)
     replace_advanced_record_with_new_data(new_mouse_input.pfa_record, old_mouse_input.pfa_record)
@@ -202,7 +220,7 @@ class Mouse:
     """
 
     def __init__(self, physical_id, handler, gender, mouseline, genotype,
-                 birth_date, end_date, cog, phenotype, project_title, comment):
+                 birth_date, end_date, cog, phenotype, project_title, experiment, comment):
         self.physical_id = physical_id  # Physical ID of the mouse
         self.handler = handler  # Handler of the harvested mouse
         self.gender = gender  # Gender of the mouse
@@ -213,6 +231,7 @@ class Mouse:
         self.cog = cog  # Confirmation of genotype of the mouse
         self.phenotype = phenotype  # Phenotype of the mouse
         self.project_title = project_title  # project tile of the mouse
+        self.experiment = experiment
         self.comment = comment
         self.pfa_record = AdvancedRecord()  # Instantiate a new Record
         self.freeze_record = Record()  # Instantiate a new AdvancedRecord
@@ -231,6 +250,7 @@ class Mouse:
                self.cog == other.cog and \
                self.phenotype == other.phenotype and \
                self.project_title == other.project_title and \
+               self.experiment == other.experiment and \
                self.comment == other.comment and \
                self.pfa_record == other.pfa_record and \
                self.freeze_record == other.freeze_record
@@ -322,6 +342,14 @@ class Mouse:
         self.__project_title = project_title
 
     @property
+    def experiment(self):
+        return self.__experiment
+
+    @experiment.setter
+    def experiment(self, experiment):
+        self.__experiment = experiment
+
+    @property
     def comment(self):
         return self.__comment
 
@@ -345,6 +373,10 @@ class Mouse:
     def freeze_record(self, freeze_record):
         self.__freeze_record = freeze_record if freeze_record is not None else Record()
 
+    def get_attribute_by_str(self, column_name):
+        dict_self = self.__dict__
+        return dict_self[column_name]
+
 
 class Record:
     """
@@ -363,15 +395,20 @@ class Record:
 
     @liver.setter
     def liver(self, liver):
-        self.__liver = int(liver)
-
+        try:
+            self.__liver = int(liver)
+        except ValueError:
+            self.__liver = 0
     @property
     def liver_tumor(self):
         return self.__liver_tumor
 
     @liver_tumor.setter
     def liver_tumor(self, liver_tumor):
-        self.__liver_tumor = int(liver_tumor)
+        try:
+            self.__liver_tumor = int(liver_tumor)
+        except ValueError:
+            self.__liver_tumor = 0
 
     @property
     def others(self):
@@ -407,31 +444,40 @@ class AdvancedRecord(Record):
 
     @small_intenstine.setter
     def small_intenstine(self, small_intenstine):
-        self.__small_intenstine = int(small_intenstine)
-
+        try:
+            self.__small_intenstine = int(small_intenstine)
+        except ValueError:
+            self.__small_intenstine = 0
     @property
     def small_intenstine_tumor(self):
         return self.__small_intenstine_tumor
 
     @small_intenstine_tumor.setter
     def small_intenstine_tumor(self, small_intenstine_tumor):
-        self.__small_intenstine_tumor = int(small_intenstine_tumor)
-
+        try:
+            self.__small_intenstine_tumor = int(small_intenstine_tumor)
+        except ValueError:
+            self.__small_intenstine_tumor = 0
     @property
     def skin(self):
         return self.__skin
 
     @skin.setter
     def skin(self, skin):
-        self.__skin = int(skin)
-
+        try:
+            self.__skin = int(skin)
+        except ValueError:
+            self.__skin = 0
     @property
     def skin_tumor(self):
         return self.__skin_tumor
 
     @skin_tumor.setter
     def skin_tumor(self, skin_tumor):
-        self.__skin_tumor = int(skin_tumor)
+        try:
+            self.__skin_tumor = int(skin_tumor)
+        except ValueError:
+            self.__skin_tumor = 0
 
     def __eq__(self, other):
         return self.liver == other.liver and \

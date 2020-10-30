@@ -1,3 +1,4 @@
+import json
 from abc import ABC, abstractmethod
 import xmltodict
 from harvestmouseapp.mvc_model.model import Mouse, MouseList, Record, AdvancedRecord
@@ -51,6 +52,7 @@ def parse_mouse(raw_dict):
             cog=raw_dict['cog'],
             phenotype=raw_dict['phenotype'],
             project_title=raw_dict['project_title'],
+            experiment=raw_dict['experiment'],
             comment=raw_dict['comment']
         )
         if 'pfa_record' in raw_dict.keys():
@@ -130,3 +132,44 @@ class XmlModelAdapter(MouseModelAdapter):
         return None
 
 
+def _convert_json_to_mouse(json_m):
+    mouse = Mouse(
+        physical_id=json_m['physical_id'],
+        handler=json_m['handler'],
+        gender=json_m['gender'],
+        mouseline=json_m['mouseline'],
+        genotype=json_m['genotype'],
+        birth_date=json_m['birth_date'],
+        end_date=json_m['end_date'],
+        cog=json_m['cog'],
+        phenotype=json_m['phenotype'],
+        project_title=json_m['project_title'],
+        experiment=json_m['experiment'],
+        comment=json_m['comment']
+    )
+
+    mouse.pfa_record.liver = json_m['pfa_record']['liver']
+    mouse.pfa_record.liver_tumor = json_m['pfa_record']['liver_tumor']
+    mouse.pfa_record.small_intenstine = json_m['pfa_record']['small_intenstine']
+    mouse.pfa_record.small_intenstine_tumor = json_m['pfa_record']['small_intenstine_tumor']
+    mouse.pfa_record.skin = json_m['pfa_record']['skin']
+    mouse.pfa_record.skin_tumor = json_m['pfa_record']['skin_tumor']
+    mouse.pfa_record.others = json_m['pfa_record']['others']
+    mouse.freeze_record.liver = json_m['freeze_record']['liver']
+    mouse.freeze_record.liver_tumor = json_m['freeze_record']['liver_tumor']
+    mouse.freeze_record.others = json_m['freeze_record']['others']
+    return mouse
+
+
+class JsonModelAdapter(MouseModelAdapter):
+    def transform(self, raw_data):
+        mouse_dict = json.loads(raw_data)
+        if 'mouse_list' in mouse_dict.keys():
+            p_obj = MouseList()
+            array_json_list = mouse_dict['mouse_list']
+            for json_m in array_json_list:
+                p_obj.add_mouse(_convert_json_to_mouse(json_m))
+        else:
+            p_obj = _convert_json_to_mouse(mouse_dict)
+
+        return p_obj

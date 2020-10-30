@@ -1,23 +1,26 @@
+import json
+
+from django.db import DatabaseError
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
-from .models import HarvestedMouse
+from .mvc_model.Error import DuplicationMouseError, MouseNotFoundError
 from .mvc_model.model import Mouse, AdvancedRecord, Record, MouseList
-from .serializers import HarvestedMouseSerializer
 from django import forms
 from datetime import datetime
 import pandas as pd
 
 from harvestmouseapp.mvc_model.databaseAdapter import GenericSqliteConnector
-from harvestmouseapp.mvc_model.mouseAdapter import XmlModelAdapter
+from harvestmouseapp.mvc_model.mouseAdapter import JsonModelAdapter
 from harvestmouseapp.mvc_model.mouseController import MouseController
-from harvestmouseapp.mvc_model.mouseViewer import XmlMouseViewer
+from harvestmouseapp.mvc_model.mouseViewer import JsonMouseViewer
+from .mvc_model.mouseFilter import FilterOption, MouseFilter, get_enum_by_value
 
 mouse_controller_g = MouseController()
 mouse_controller_g.set_db_adapter(GenericSqliteConnector())
-mouse_controller_g.set_mouse_viewer(XmlMouseViewer())
-mouse_controller_g.set_model_adapter(XmlModelAdapter())
+mouse_controller_g.set_mouse_viewer(JsonMouseViewer())
+mouse_controller_g.set_model_adapter(JsonModelAdapter())
+mouse_controller_g.set_mouse_filter(MouseFilter())
 
 
 class UploadFileForm(forms.Form):
@@ -33,8 +36,35 @@ class UploadFileForm(forms.Form):
 def harvested_mouse_list(request):
     """
     List all the harvested mouse
+    { 'filter': '[column_name_1]@[value_1]@[filter_option_1]$[column_name_2][value_2][filter_option_2]' }
     """
-    mouse_list = mouse_controller_g.get_mouse_for_transfer()
+    option_found = False
+    fitler_options = None
+    if len(request.query_params) != 0:
+        option_found = True
+
+    if option_found:
+        if 'filter' in request.query_params.keys():
+            option_filter_str = request.query_params['filter']
+            split_filter_options = option_filter_str.split('$')
+            fitler_options = []
+            if isinstance(split_filter_options, list):
+
+                for filter_o in split_filter_options:
+                    split_detailed_option = filter_o.split('@')
+
+                    filter_option = FilterOption(
+                        column_name=split_detailed_option[0],
+                        value=split_detailed_option[1]
+                    )
+                    try:
+                        filter_option.filter_type = get_enum_by_value(int(split_detailed_option[2]))
+                    except IndexError:
+                        pass
+
+                    fitler_options.append(filter_option)
+
+    mouse_list = mouse_controller_g.get_mouse_for_transfer(filter_option=fitler_options)
 
     return Response(mouse_list)
 
@@ -43,6 +73,9 @@ def harvested_mouse_list(request):
 def harvested_mouse_force_list(request):
     """
     List all the harvested mouse
+    Filtered option:
+    by Json
+    { 'filter': '[column_name_1]@[value_1]@[filter_option_1]$[column_name_2][value_2][filter_option_2]' }
     """
     mouse_list = mouse_controller_g.get_mouse_for_transfer(force=True)
 
@@ -54,15 +87,15 @@ def harvested_mouse_insertion(request):
     """
     Insertion of the harvested mouse into database
     """
-    data = None
-
-    if 'data' in request.data.keys():
-        data = mouse_controller_g.create_mouse(request.data['data'])
-
-    if data:
+    try:
+        mouse_controller_g.create_mouse(request.data)
         return Response(status=status.HTTP_201_CREATED)
-    else:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+    except DuplicationMouseError as e:
+        return Response(data=e.message, status=status.HTTP_201_CREATED)
+    except ValueError as e:
+        return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
+    except DatabaseError as e:
+        return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['PUT'])
@@ -70,14 +103,15 @@ def harvested_mouse_update(request):
     """
     Update of the harvested mouse into database
     """
-    data = None
-
-    if 'data' in request.data.keys():
-        data = mouse_controller_g.update_mouse(request.data['data'])
-        data_xml = mouse_controller_g.get_mouse_for_transfer(data)
-        return Response(data=data_xml, status=status.HTTP_200_OK)
-    else:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+    try:
+        mouse_controller_g.update_mouse(request.data)
+        return Response(status=status.HTTP_200_OK)
+    except MouseNotFoundError as e:
+        return Response(data=e, status=status.HTTP_200_OK)
+    except ValueError as e:
+        return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
+    except DatabaseError as e:
+        return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['DELETE'])
@@ -86,14 +120,14 @@ def harvested_mouse_delete(request):
     Delete of the selected harvested mouse
     """
     try:
-        data = None
-        if 'data' in request.data.keys():
-            mouse_controller_g.delete_mouse(request.data['data'])
-            return Response(status=status.HTTP_200_OK)
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-    except:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        mouse_controller_g.delete_mouse(request.data)
+        return Response(status=status.HTTP_200_OK)
+    except MouseNotFoundError as e:
+        return Response(data=e, status=status.HTTP_200_OK)
+    except ValueError as e:
+        return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
+    except DatabaseError as e:
+        return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['DELETE'])
@@ -107,8 +141,10 @@ def harvested_all_mouse_delete(request):
     try:
         mouse_list_in_xml = mouse_controller_g.get_mouse_for_transfer()
         mouse_controller_g.delete_mouse(mouse_list_in_xml)
-    except:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+    except ValueError as e:
+        return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
+    except DatabaseError as e:
+        return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
 
     if mouse_controller_g.get_num_total_mouse() == 0:
         return Response(status=status.HTTP_200_OK)
@@ -268,4 +304,3 @@ def insert_external_data(filename):
         return Response(status=status.HTTP_200_OK)
     except:
         return Response(status=status.HTTP_400_BAD_REQUEST)
-

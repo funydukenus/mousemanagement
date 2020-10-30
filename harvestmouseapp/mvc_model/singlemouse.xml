@@ -11,6 +11,7 @@
    <cog>1</cog>
    <phenotype>Phenotyp1</phenotype>
    <project_title>abc</project_title>
+   <experiment>experiement1</experiment>
    <comment>comment1</comment>
 </mouse>
 </mouselist>

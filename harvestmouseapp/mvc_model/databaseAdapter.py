@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from harvestmouseapp.models import HarvestedMouse, HarvestedBasedNumber, HarvestedAdvancedNumber
+from harvestmouseapp.mvc_model.Error import DuplicationMouseError, MouseNotFoundError
 from harvestmouseapp.mvc_model.model import Mouse, MouseList
 
 
@@ -19,11 +20,11 @@ class GenericDatabaseAdapter(ABC):
         self._mouse_list = MouseList()
 
     @abstractmethod
-    def create_mouse(self, mouse_input) -> Mouse:
+    def create_mouse(self, mouse_input):
         pass
 
     @abstractmethod
-    def update_mouse(self, mouse_input) -> Mouse:
+    def update_mouse(self, mouse_input):
         pass
 
     @abstractmethod
@@ -39,28 +40,50 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
     def __init__(self):
         super(GenericSqliteConnector, self).__init__()
         # Retrive the get_all_mouse and converted into Mouse List object
+        self.not_init_yet = False
 
     def create_mouse(self, mouse_input) -> Mouse:
+        if not self.not_init_yet:
+            self.get_all_mouse()
+            self.not_init_yet = True
+
+        return_mouse_input = MouseList()
         if isinstance(mouse_input, MouseList):
+
             for m in mouse_input:
                 if not self._mouse_list.is_mouse_in_list(mouse_input=m, list_check_by_id=True):
                     self._create_intermal_harvested_mouse_and_save_into_cache(m)
+                else:
+                    return_mouse_input = MouseList()
+                    return_mouse_input.add_mouse(m)
         else:
             if not self._mouse_list.is_mouse_in_list(mouse_input=mouse_input, list_check_by_id=True):
                 self._create_intermal_harvested_mouse_and_save_into_cache(mouse_input)
+            else:
+                return_mouse_input.add_mouse(mouse_input)
+                return mouse_input
 
-        return mouse_input
+        if len(return_mouse_input) != 0:
+            raise DuplicationMouseError(return_mouse_input)
 
-    def update_mouse(self, mouse_input) -> Mouse:
+    def update_mouse(self, mouse_input):
+        if not self.not_init_yet:
+            self.get_all_mouse()
+            self.not_init_yet = True
+        return_mouse_input = MouseList()
         if isinstance(mouse_input, MouseList):
             for m in mouse_input:
                 if self._mouse_list.is_mouse_in_list(physical_id=m.physical_id):
                     self._update_intermal_harvested_mouse_and_save_into_cache(m)
+                else:
+                    return_mouse_input.add_mouse(m)
         else:
             if self._mouse_list.is_mouse_in_list(physical_id=mouse_input.physical_id):
                 self._update_intermal_harvested_mouse_and_save_into_cache(mouse_input)
-
-        return mouse_input
+            else:
+                return_mouse_input.add_mouse(mouse_input)
+        if len(return_mouse_input) != 0:
+            raise MouseNotFoundError(mouse_input)
 
     def get_all_mouse(self, force=False):
         if force or self._mouse_list.get_size() == 0:
@@ -72,17 +95,28 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
             return self._mouse_list
 
     def delete_mouse(self, mouse_input):
+        if not self.not_init_yet:
+            self.get_all_mouse()
+            self.not_init_yet = True
+        return_mouse_input = MouseList()
         if isinstance(mouse_input, MouseList):
             for m in mouse_input:
                 if self._mouse_list.is_mouse_in_list(physical_id=m.physical_id):
                     mouse_data_from_db = HarvestedMouse.objects.get(physicalId=m.physical_id)
                     mouse_data_from_db.delete()
                     self._mouse_list.remove_mouse(m)
+                else:
+                    return_mouse_input.add_mouse(m)
         else:
             if self._mouse_list.is_mouse_in_list(physical_id=mouse_input.physical_id):
                 mouse_data_from_db = HarvestedMouse.objects.get(physicalId=mouse_input.physical_id)
                 mouse_data_from_db.delete()
                 self._mouse_list.remove_mouse(mouse_input)
+            else:
+                return_mouse_input.add_mouse(mouse_input)
+
+        if len(return_mouse_input) != 0:
+            raise MouseNotFoundError(mouse_input)
 
     def _create_intermal_harvested_mouse_and_save_into_cache(self, single_mouse):
         q = HarvestedMouse(
@@ -96,7 +130,7 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
             confirmationOfGenoType=single_mouse.cog,
             phenoType=single_mouse.phenotype,
             projectTitle=single_mouse.project_title,
-            experiment='',
+            experiment=single_mouse.experiment,
             comment=single_mouse.comment
         )
 
@@ -134,7 +168,7 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
         mouse_data_from_db.confirmationOfGenoType = single_mouse.cog
         mouse_data_from_db.phenoType = single_mouse.phenotype
         mouse_data_from_db.projectTitle = single_mouse.project_title
-        mouse_data_from_db.experiment = ''
+        mouse_data_from_db.experiment = single_mouse.experiment
         mouse_data_from_db.comment = single_mouse.comment
 
         # Save the mouse into the databse
@@ -175,6 +209,7 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
                       cog=r.confirmationOfGenoType,
                       phenotype=r.phenoType,
                       project_title=r.projectTitle,
+                      experiment=r.experiment,
                       comment=r.comment)
 
             freeze_record_db = HarvestedBasedNumber.objects.get(harvestedMouseId=r.id)
@@ -194,5 +229,3 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
             m.pfa_record.others = pfa_record_db.others
 
             self._mouse_list.add_mouse(m)
-
-

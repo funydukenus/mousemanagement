@@ -1,19 +1,8 @@
 from abc import ABC, abstractmethod
 from xml.dom import minidom
-from xml.etree.ElementTree import Element, SubElement, Comment, tostring, ElementTree
-from harvestmouseapp.mvc_model.model import Mouse, MouseList
-
-
-class Viewer:
-
-    def __init__(self):
-        self._viewer = None
-
-    def _set_viewer(self, viewer):
-        self._viewer = viewer
-
-    def transform(self, mouse_data):
-        return self._viewer.transform(mouse_data)
+from xml.etree.ElementTree import Element, SubElement, Comment, tostring
+from harvestmouseapp.mvc_model.model import MouseList
+import json
 
 
 class GenericMouseViewer(ABC):
@@ -40,22 +29,21 @@ def prettify(elem):
 class XmlMouseViewer(GenericMouseViewer):
     def __init__(self):
         self.document = None
-        self.cur_mouse_node = None
 
     def transform(self, mouse_data):
+        self.document = None
         root_node = None
         if isinstance(mouse_data, MouseList):
             root_node = self._create_root_node('mouselist')
 
         if isinstance(mouse_data, MouseList):
-            next_node = None
             # initialize to comment node first
             for m in mouse_data:
                 # append node will override parent node option
-                next_node = self._add_mouse_node(mouse=m, parent_node=root_node)
+                self._add_mouse_node(mouse=m, parent_node=root_node)
         else:
             # append node will override parent node option
-            mouse_node = self._add_mouse_node(mouse=mouse_data)
+            self._add_mouse_node(mouse=mouse_data)
 
         return prettify(self.document)
 
@@ -95,6 +83,7 @@ class XmlMouseViewer(GenericMouseViewer):
         _create_sub_node_from(mouse_node, 'cog', str(mouse.cog))
         _create_sub_node_from(mouse_node, 'phenotype', mouse.phenotype)
         _create_sub_node_from(mouse_node, 'project_title', mouse.project_title)
+        _create_sub_node_from(mouse_node, 'experiment', mouse.experiment)
         _create_sub_node_from(mouse_node, 'comment', mouse.comment)
 
         pfa_node = SubElement(mouse_node, 'pfa_record')
@@ -115,5 +104,52 @@ class XmlMouseViewer(GenericMouseViewer):
         return mouse_node
 
 
+def _distribute_data_to_mouse(mouse_data):
+    dict_m = {
+        'physical_id': mouse_data.physical_id,
+        'handler': mouse_data.handler,
+        'gender': mouse_data.gender,
+        'mouseline': mouse_data.mouseline,
+        'genotype': mouse_data.genotype,
+        'birth_date': mouse_data.birth_date,
+        'end_date': mouse_data.end_date,
+        'cog': str(mouse_data.cog),
+        'phenotype': mouse_data.phenotype,
+        'project_title': mouse_data.project_title,
+        'experiment': mouse_data.experiment,
+        'comment': mouse_data.comment,
+        'freeze_record': {
+            'liver': mouse_data.freeze_record.liver,
+            'liver_tumor': mouse_data.freeze_record.liver_tumor,
+            'others': mouse_data.freeze_record.others
+        },
+        'pfa_record': {
+            'liver': mouse_data.pfa_record.liver,
+            'liver_tumor': mouse_data.pfa_record.liver_tumor,
+            'small_intenstine': mouse_data.pfa_record.small_intenstine,
+            'small_intenstine_tumor': mouse_data.pfa_record.small_intenstine_tumor,
+            'skin': mouse_data.pfa_record.skin,
+            'skin_tumor': mouse_data.pfa_record.skin_tumor,
+            'others': mouse_data.pfa_record.others
+        }
+    }
+    return dict_m
 
 
+def _convert_mouse_to_dict(mouse_data):
+    if isinstance(mouse_data, MouseList):
+        dict_m = {'mouse_list': []}
+        arr_m = dict_m['mouse_list']
+        for m in mouse_data:
+            arr_m.append(
+                _distribute_data_to_mouse(m)
+            )
+        return dict_m
+    else:
+        return _distribute_data_to_mouse(mouse_data)
+
+
+class JsonMouseViewer(GenericMouseViewer):
+    def transform(self, mouse_data):
+        data = _convert_mouse_to_dict(mouse_data)
+        return json.dumps(data)

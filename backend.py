@@ -13,6 +13,7 @@ UPDATE_API_ENDPOINT = API_ENDPOINT + 'update'
 LIST_API_ENDPOINT   = API_ENDPOINT + 'list'
 DELETE_ALL_API_ENDPOINT = API_ENDPOINT + 'delete/all'
 
+
 # Start the console gui
 def gui_start():
     # Create the menu
@@ -39,14 +40,16 @@ def gui_start():
     # Finally, we call show to show the menu and allow the user to interact
     menu.show()
 
+
 def list_all_mouse_on_screen():
     print('Sending list command')
     # sending post request and saving response as response object
     r = requests.get(url=LIST_API_ENDPOINT)
     if r.status_code == 200:
-        with open('input.json', 'w') as f_open:
+        with open('output.csv', 'w') as f_open:
             f_open.writelines(r.text)
     print('Finished')
+
 
 def import_csv_into_db():
     input_file = 'input.csv'
@@ -56,7 +59,9 @@ def import_csv_into_db():
 
         csv_file = csv_file.fillna('No Data')
 
-        arr = []
+        dict = {'mouse_list': []}
+
+        arr = dict['mouse_list']
 
         for index, row in csv_file.iterrows():
             gender = row['gender']
@@ -71,35 +76,34 @@ def import_csv_into_db():
                 continue
             data = {
                 'handler': row['Handled by'],
-                'physicalId': row['physical_id'],
+                'physical_id': row['physical_id'],
                 'gender': gender,
-                'mouseLine': row['mouseline'],
-                'genoType': row['Genotype'],
-                'birthDate': str(birthdate.date()),
-                'endDate': str(endDate.date()),
-                'confirmationOfGenoType': row['Confirmation of genotype'],
-                'phenoType': row['phenotype'],
-                'projectTitle': row['project_title'],
+                'mouseline': row['mouseline'],
+                'genotype': row['Genotype'],
+                'birth_date': str(birthdate.date()),
+                'end_date': str(endDate.date()),
+                'cog': row['Confirmation of genotype'],
+                'phenotype': row['phenotype'],
+                'project_title': row['project_title'],
                 'experiment': row['Experiment'],
                 'comment': row['comment'],
-                'freezeRecord': {
+                'freeze_record': {
                     'liver': row['Freeze Liver'],
-                    'liverTumor': row['Freeze Liver tumour'],
+                    'liver_tumor': row['Freeze Liver tumour'],
                     'others': row['Freeze Others']
                 },
-                'pfaRecord': {
+                'pfa_record': {
                     'liver': row['PFA Liver'],
-                    'liverTumor': row['PFA Liver tumour'],
-                    'smallIntestine': row['PFA Small intestine'],
-                    'smallIntestineTumor': row['PFA SI tumour'],
+                    'liver_tumor': row['PFA Liver tumour'],
+                    'small_intenstine': row['PFA Small intestine'],
+                    'small_intenstine_tumor': row['PFA SI tumour'],
                     'skin': row['PFA Skin'],
-                    'skinHair': row['PFA Skin_Hair'],
+                    'skin_tumor': row['PFA Skin_Hair'],
                     'others': row['PFA Others']
                 }
             }
             arr.append(data)
-
-        jsonStr = json.dumps(arr)
+        arr = json.dumps(dict)
     else:
         json_str_arr = []
         with open(input_file, 'r') as f_open:

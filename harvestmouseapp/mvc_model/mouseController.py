@@ -1,4 +1,5 @@
-from harvestmouseapp.mvc_model.model import Mouse, MouseList
+from harvestmouseapp.mvc_model.Error import WrongTypeError
+from harvestmouseapp.mvc_model.model import MouseList, Mouse
 
 
 class MouseController:
@@ -41,24 +42,34 @@ class MouseController:
         converted_data = self._model_adapter.transform(raw_data)
         return self._db_adapter.update_mouse(converted_data)
 
-    def get_mouse_for_transfer(self, raw_data=None, filter_option=None, force=False, transform=True):
+    def get_mouse_for_transfer(self, filter_option=None, force=False, transform=True):
         # Physical id can be None, string object or list object
         # if raw_data is None, get full list of mouse
         # filter option only apply to the list of mouse
 
         raw_return_data = None
-        data_from_db = self._db_adapter.get_all_mouse(force)
+        filtered_moust_list = self._db_adapter.get_all_mouse(force)
 
-        if data_from_db is not None and transform:
-            # Filtered mouse list can ba a list of mouse or single individual mouse object
-            filtered_moust_list = data_from_db # self._mouse_filter.filter(data_from_db, raw_data, filter_option)
+        if transform:
+            if filter_option is not None:
+                # Filtered mouse list can ba a list of mouse or single individual mouse object
+                for f in filter_option:
+                    filtered_moust_list = self._mouse_filter.filter(filtered_moust_list, f)
 
-            # transform will take either single moust object or list of object
-            # and transforms to target format
-            raw_return_data = self._mouse_viewer.transform(filtered_moust_list)
-
-        if not transform:
-            raw_return_data = data_from_db
+                # transform will take either single moust object or list of object
+                # and transforms to target format
+            if isinstance(filtered_moust_list, MouseList):
+                if len(filtered_moust_list) != 1:
+                    raw_return_data = self._mouse_viewer.transform(filtered_moust_list)
+                else:
+                    mouse = filtered_moust_list[0]
+                    raw_return_data = self._mouse_viewer.transform(mouse)
+            elif isinstance(filtered_moust_list, Mouse):
+                raw_return_data = self._mouse_viewer.transform(filtered_moust_list)
+            else:
+                raise WrongTypeError()
+        else:
+            raw_return_data = filtered_moust_list
 
         return raw_return_data
 
