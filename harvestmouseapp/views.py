@@ -1,5 +1,3 @@
-import json
-
 from django.db import DatabaseError
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -215,7 +213,7 @@ def save_uploaded_file(f):
 #              This function creats the mouse object and transform based on the transfom object
 ############################################
 def create_mouse_object(physical_id, handler, gender, mouseline, genotype,
-                        birth_date, end_date, cog, phenotype, project_title, comment,
+                        birth_date, end_date, cog, phenotype, project_title, comment, experiment,
                         pfa_record, freeze_record):
     harvested_mouse = Mouse(
         handler=handler,
@@ -228,6 +226,7 @@ def create_mouse_object(physical_id, handler, gender, mouseline, genotype,
         cog=cog,
         phenotype=phenotype,
         project_title=project_title,
+        experiment=experiment,
         comment=comment
     )
 
@@ -271,6 +270,7 @@ def convert_csv_to_json_arr(filename):
             cog=row['Confirmation of genotype'],
             phenotype=row['phenotype'],
             project_title=row['project_title'],
+            experiment=row['experiment'],
             comment=row['comment'],
             pfa_record=AdvancedRecord(
                 row['PFA Liver'],
