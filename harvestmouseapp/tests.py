@@ -1342,7 +1342,7 @@ class ModelAdapterTestCase(TestCase):
     # 1. Check if the mouse can be retrived correctly
     def test_model_mouse_matched(self):
         # open xml file
-        with open('harvestmouseapp/mvc_model/singlemouse.xml') as r_open:
+        with open('harvestmouseapp/mvc_model/sample/singlemouse.xml') as r_open:
             xml_raw_data = r_open.read()
             # transform the data into mouse object
             converted = self.adapter.transform(xml_raw_data)
@@ -1355,7 +1355,7 @@ class ModelAdapterTestCase(TestCase):
     # 1. Check if the mouse list can be retrived correctly
     def test_model_mouse_List_matched(self):
         # open xml file
-        with open('harvestmouseapp/mvc_model/groupmouse.xml') as r_open:
+        with open('harvestmouseapp/mvc_model/sample/groupmouse.xml') as r_open:
             xml_raw_data = r_open.read()
             # transform the data into mouse object
             converted_list = self.adapter.transform(xml_raw_data)

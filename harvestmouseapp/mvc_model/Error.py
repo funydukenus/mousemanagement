@@ -11,10 +11,12 @@ class GenericSqliteConnectorError(Error):
 
 
 class DuplicationMouseError(GenericSqliteConnectorError):
-    # Raised when the duplication mouse occured during insertion
+    """
+    Raised when the duplication mouse occured during insertion
+    """
     def __init__(self, duplicated_mouse_input):
         self.duplicated_mouse_input = duplicated_mouse_input
-        self.message = 'Duplicated mouse: ['
+        self.message = '['
         for m in self.duplicated_mouse_input:
             self.message += str(m) + ','
         self.message = self.message[:-1] + ']'
@@ -22,10 +24,12 @@ class DuplicationMouseError(GenericSqliteConnectorError):
 
 
 class MouseNotFoundError(GenericSqliteConnectorError):
-    # Raised when the duplication mouse occured during insertion
+    """
+    Raised when the non-existed mouse occured during updates and deletion
+    """
     def __init__(self, duplicated_mouse_input):
         self.duplicated_mouse_input = duplicated_mouse_input
-        self.message = 'Not found mouse: ['
+        self.message = '['
         for m in self.duplicated_mouse_input:
             self.message += str(m) + ','
         self.message = self.message[:-1] + ']'

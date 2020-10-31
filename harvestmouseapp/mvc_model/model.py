@@ -89,7 +89,6 @@ class MouseList:
         # regarding to the list, if any of the mouse
         # not found in the list, return False to the
         # caller
-        actual_ref = None
         if is_list(mouse_input):
             actual_ref = []
             for m in mouse_input:
@@ -399,6 +398,7 @@ class Record:
             self.__liver = int(liver)
         except ValueError:
             self.__liver = 0
+
     @property
     def liver_tumor(self):
         return self.__liver_tumor
@@ -448,6 +448,7 @@ class AdvancedRecord(Record):
             self.__small_intenstine = int(small_intenstine)
         except ValueError:
             self.__small_intenstine = 0
+
     @property
     def small_intenstine_tumor(self):
         return self.__small_intenstine_tumor
@@ -458,6 +459,7 @@ class AdvancedRecord(Record):
             self.__small_intenstine_tumor = int(small_intenstine_tumor)
         except ValueError:
             self.__small_intenstine_tumor = 0
+
     @property
     def skin(self):
         return self.__skin
@@ -468,6 +470,7 @@ class AdvancedRecord(Record):
             self.__skin = int(skin)
         except ValueError:
             self.__skin = 0
+
     @property
     def skin_tumor(self):
         return self.__skin_tumor

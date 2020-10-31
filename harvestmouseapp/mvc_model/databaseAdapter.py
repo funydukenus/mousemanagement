@@ -8,7 +8,7 @@ from harvestmouseapp.mvc_model.model import Mouse, MouseList
 class GenericDatabaseAdapter(ABC):
     """
     This is the generic Database Class.
-    In order to provide database side interface with seamly interaction
+    In order to provide database side interface with seamlessly interaction
     with the rest of the compoenents, this class must be extended.
     This class is part of the MVC model
     1. Subclass must have the responsibility to convert respective
@@ -39,53 +39,74 @@ class GenericDatabaseAdapter(ABC):
 class GenericSqliteConnector(GenericDatabaseAdapter):
     def __init__(self):
         super(GenericSqliteConnector, self).__init__()
+
         # Retrive the get_all_mouse and converted into Mouse List object
-        self.not_init_yet = False
+        self.has_initialized_list_mouse = False
 
-    def create_mouse(self, mouse_input) -> Mouse:
-        if not self.not_init_yet:
-            self.get_all_mouse()
-            self.not_init_yet = True
+    def create_mouse(self, mouse_input):
+        """
+        This is an overrided create_mouse method from GenericDatabaseAdapter that
+        use to insert/create the new Mouse entry into database.
+        It does the following things in sequence
+        1. Initialize the mouse list if it has not yet intiailized
+        2. Check if the incoming mouse_input object is a Mouse object or MouseList oject and
+           handle it respectivly.
+        3. Checks through the current cached mouse list and insert those mice that not yet
+           presented in the mouse list. Return a list of mice that are duplicated in the mouse
+           list
+        """
 
-        return_mouse_input = MouseList()
+        self._init_cache_mouse_list_if_possible()  # Calling this function to init the mouse list if possible
+
+        return_mouse_input = MouseList()  # This mouse list will be return as duplicated mouse list
+
         if isinstance(mouse_input, MouseList):
-
             for m in mouse_input:
-                if not self._mouse_list.is_mouse_in_list(mouse_input=m, list_check_by_id=True):
-                    self._create_intermal_harvested_mouse_and_save_into_cache(m)
-                else:
-                    return_mouse_input = MouseList()
-                    return_mouse_input.add_mouse(m)
+                self._convert_and_add_mouse_into_cache_if_possible(
+                    mouse_ojb=m, return_mouse_input=return_mouse_input)
         else:
-            if not self._mouse_list.is_mouse_in_list(mouse_input=mouse_input, list_check_by_id=True):
-                self._create_intermal_harvested_mouse_and_save_into_cache(mouse_input)
-            else:
-                return_mouse_input.add_mouse(mouse_input)
-                return mouse_input
+            self._convert_and_add_mouse_into_cache_if_possible(
+                mouse_ojb=mouse_input, return_mouse_input=return_mouse_input)
 
         if len(return_mouse_input) != 0:
             raise DuplicationMouseError(return_mouse_input)
 
     def update_mouse(self, mouse_input):
-        if not self.not_init_yet:
-            self.get_all_mouse()
-            self.not_init_yet = True
-        return_mouse_input = MouseList()
+        """
+        This is an overrided update_mouse method from GenericDatabaseAdapter that
+        use to update the existing Mouse entry from the database.
+        It does the following things in sequence
+        1. Initialize the mouse list if it has not yet intiailized
+        2. Check if the incoming mouse_input object is a Mouse object or MouseList oject and
+           handle it respectivly.
+        3. Checks through the current cached mouse list and insert those mice that already
+           presented in the mouse list. Return a list of mice that are not existed in the mouse
+           list
+        """
+        self._init_cache_mouse_list_if_possible()  # Calling this function to init the mouse list if possible
+
+        return_mouse_input = MouseList()  # This mouse list will be return as mouse list of non-existed mice
         if isinstance(mouse_input, MouseList):
+            # mouse_input is a MouseList obj
             for m in mouse_input:
-                if self._mouse_list.is_mouse_in_list(physical_id=m.physical_id):
-                    self._update_intermal_harvested_mouse_and_save_into_cache(m)
-                else:
-                    return_mouse_input.add_mouse(m)
+                self._convert_and_update_mouse_into_cache_if_possible(
+                    mouse_ojb=m, return_mouse_input=return_mouse_input)
         else:
-            if self._mouse_list.is_mouse_in_list(physical_id=mouse_input.physical_id):
-                self._update_intermal_harvested_mouse_and_save_into_cache(mouse_input)
-            else:
-                return_mouse_input.add_mouse(mouse_input)
+            # mouse_input is a Mouse obj
+            self._convert_and_update_mouse_into_cache_if_possible(
+                mouse_ojb=mouse_input, return_mouse_input=return_mouse_input)
+
         if len(return_mouse_input) != 0:
-            raise MouseNotFoundError(mouse_input)
+            raise MouseNotFoundError(return_mouse_input)
 
     def get_all_mouse(self, force=False):
+        """
+        This is an overrided get_all_mouse method from GenericDatabaseAdapter that
+        retrive the MouseList obj either from cache or from the database. Supposely
+        the moust_list obj will mirroring the actual data in the databse. When force
+        is set to True, the existing mouse_list obj will be clear and replace with the newly
+        read data in the database
+        """
         if force or self._mouse_list.get_size() == 0:
             self._mouse_list.clear()
             mouse_data_from_db = HarvestedMouse.objects.all()
@@ -95,31 +116,38 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
             return self._mouse_list
 
     def delete_mouse(self, mouse_input):
-        if not self.not_init_yet:
-            self.get_all_mouse()
-            self.not_init_yet = True
-        return_mouse_input = MouseList()
+        """
+        This is an overrided delete_mouse method from GenericDatabaseAdapter that
+        use to delete the existing Mouse entry from the database.
+        It does the following things in sequence
+        1. Initialize the mouse list if it has not yet intiailized
+        2. Check if the incoming mouse_input object is a Mouse object or MouseList oject and
+           handle it respectivly.
+        3. Checks through the current cached mouse list and delete those mice that already
+           presented in the mouse list. Return a list of mice that are not existed in the mouse
+           list
+        """
+        self._init_cache_mouse_list_if_possible()  # Calling this function to init the mouse list if possible
+
+        return_mouse_input = MouseList()  # This mouse list will be return as mouse list of non-existed mice
+
         if isinstance(mouse_input, MouseList):
             for m in mouse_input:
-                if self._mouse_list.is_mouse_in_list(physical_id=m.physical_id):
-                    mouse_data_from_db = HarvestedMouse.objects.get(physicalId=m.physical_id)
-                    mouse_data_from_db.delete()
-                    self._mouse_list.remove_mouse(m)
-                else:
-                    return_mouse_input.add_mouse(m)
+                self._convert_and_delete_mouse_into_cache_if_possible(
+                    mouse_ojb=m, return_mouse_input=return_mouse_input)
         else:
-            if self._mouse_list.is_mouse_in_list(physical_id=mouse_input.physical_id):
-                mouse_data_from_db = HarvestedMouse.objects.get(physicalId=mouse_input.physical_id)
-                mouse_data_from_db.delete()
-                self._mouse_list.remove_mouse(mouse_input)
-            else:
-                return_mouse_input.add_mouse(mouse_input)
+            self._convert_and_delete_mouse_into_cache_if_possible(
+                mouse_ojb=mouse_input, return_mouse_input=return_mouse_input)
 
         if len(return_mouse_input) != 0:
             raise MouseNotFoundError(mouse_input)
 
     def _create_intermal_harvested_mouse_and_save_into_cache(self, single_mouse):
-        q = HarvestedMouse(
+        """
+        This function helps to convert Mouse object into databse mouse object and
+        save it into database
+        """
+        db_mouse_object = HarvestedMouse(
             physicalId=single_mouse.physical_id,
             handler=single_mouse.handler,
             gender=single_mouse.gender,
@@ -135,16 +163,15 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
         )
 
         # Save the mouse into the databse
-        q.save()
-        # To-Do Create PFA and Freeze record respectivility
+        db_mouse_object.save()
 
-        q.freezeRecord.create(
+        db_mouse_object.freezeRecord.create(
             liver=single_mouse.freeze_record.liver,
             liverTumor=single_mouse.freeze_record.liver_tumor,
             others=single_mouse.freeze_record.others
         ).save()
 
-        q.pfaRecord.create(
+        db_mouse_object.pfaRecord.create(
             liver=single_mouse.pfa_record.liver,
             liverTumor=single_mouse.pfa_record.liver_tumor,
             smallIntestine=single_mouse.pfa_record.small_intenstine,
@@ -158,6 +185,10 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
         self._mouse_list.add_mouse(single_mouse)
 
     def _update_intermal_harvested_mouse_and_save_into_cache(self, single_mouse):
+        """
+        This function helps to get the databse mouse obj from the database and
+        replace all the atrributes of the mouse model from the single_mouse Mouse obj
+        """
         mouse_data_from_db = HarvestedMouse.objects.get(physicalId=single_mouse.physical_id)
         mouse_data_from_db.handler = single_mouse.handler
         mouse_data_from_db.gender = single_mouse.gender
@@ -198,6 +229,10 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
         self._mouse_list.update_mouse(single_mouse)
 
     def _convert_sqlite_db_mouse_object_and_save_into_cache(self, db_raw):
+        """
+        This function helps convert list of database-mouse obj read from database
+        and added into current mouse_list cache
+        """
         for r in db_raw:
             m = Mouse(physical_id=r.physicalId,
                       handler=r.handler,
@@ -229,3 +264,48 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
             m.pfa_record.others = pfa_record_db.others
 
             self._mouse_list.add_mouse(m)
+
+    def _init_cache_mouse_list_if_possible(self):
+        """
+        This function helps to initialize the mouse list obj and mark it
+        as intialized. So next time it won't intitialized again.
+        """
+        if not self.has_initialized_list_mouse:
+            self.get_all_mouse()
+            self.has_initialized_list_mouse = True
+
+    def _convert_and_add_mouse_into_cache_if_possible(self, mouse_ojb, return_mouse_input):
+        """
+        This function helps convert Mouse object to databse-mouse object and save into
+        the database. Already existed mouse will not be added and will add to return
+        mouse input
+        """
+        if not self._mouse_list.is_mouse_in_list(mouse_input=mouse_ojb, list_check_by_id=True):
+            # calling this to do the actual muscle work
+            self._create_intermal_harvested_mouse_and_save_into_cache(mouse_ojb)
+        else:
+            return_mouse_input.add_mouse(mouse_ojb)
+
+    def _convert_and_update_mouse_into_cache_if_possible(self, mouse_ojb, return_mouse_input):
+        """
+        This function helps convert Mouse object to databse-mouse object and update the corresponding mouse obj
+        the database. Non-existed mouse will not be added and will add to return
+        mouse input
+        """
+        if self._mouse_list.is_mouse_in_list(physical_id=mouse_ojb.physical_id):
+            self._update_intermal_harvested_mouse_and_save_into_cache(mouse_ojb)
+        else:
+            return_mouse_input.add_mouse(mouse_ojb)
+
+    def _convert_and_delete_mouse_into_cache_if_possible(self, mouse_ojb, return_mouse_input):
+        """
+        This function helps convert Mouse object to databse-mouse object and delete the corresponding mouse obj
+        the database. Non-existed mouse will not be added and will add to return
+        mouse input
+        """
+        if self._mouse_list.is_mouse_in_list(physical_id=mouse_ojb.physical_id):
+            mouse_data_from_db = HarvestedMouse.objects.get(physicalId=mouse_ojb.physical_id)
+            mouse_data_from_db.delete()
+            self._mouse_list.remove_mouse(mouse_ojb)
+        else:
+            return_mouse_input.add_mouse(mouse_ojb)

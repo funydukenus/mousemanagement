@@ -5,70 +5,21 @@ from harvestmouseapp.mvc_model.model import Mouse, MouseList, Record, AdvancedRe
 
 
 class MouseModelAdapter(ABC):
-
+    """
+    This is the Mouse Model Adapter Class.
+    Subclass must implement the transform the any expected
+    raw_data into either MouseList object or Mouse object
+    """
     @abstractmethod
-    def transform(self, raw_date):
+    def transform(self, raw_data):
         pass
-
-
-def parse_sub_record(raw_dict):
-    try:
-        record = Record(
-            liver=raw_dict['liver'],
-            liver_tumor=raw_dict['liver_tumor'],
-            others=raw_dict['others']
-        )
-        return record
-    except KeyError as e:
-        return e
-
-
-def parse_sub_advanced_record(raw_dict):
-    try:
-        record = AdvancedRecord(
-            liver=raw_dict['liver'],
-            liver_tumor=raw_dict['liver_tumor'],
-            small_intenstine=raw_dict['small_intenstine'],
-            small_intenstine_tumor=raw_dict['small_intenstine_tumor'],
-            skin=raw_dict['skin'],
-            skin_tumor=raw_dict['skin_tumor'],
-            others=raw_dict['others']
-        )
-        return record
-    except KeyError as e:
-        return e
-
-
-def parse_mouse(raw_dict):
-    try:
-        mouse = Mouse(
-            physical_id=raw_dict['physical_id'],
-            handler=raw_dict['handler'],
-            gender=raw_dict['gender'],
-            mouseline=raw_dict['mouseline'],
-            genotype=raw_dict['genotype'],
-            birth_date=raw_dict['birth_date'],
-            end_date=raw_dict['end_date'],
-            cog=raw_dict['cog'],
-            phenotype=raw_dict['phenotype'],
-            project_title=raw_dict['project_title'],
-            experiment=raw_dict['experiment'],
-            comment=raw_dict['comment']
-        )
-        if 'pfa_record' in raw_dict.keys():
-            pfa_record_xml = raw_dict['pfa_record']
-            mouse.pfa_record = parse_sub_advanced_record(pfa_record_xml)
-        if 'freeze_record' in raw_dict.keys():
-            freeze_record_xml = raw_dict['freeze_record']
-            mouse.freeze_record = parse_sub_record(freeze_record_xml)
-
-        return mouse
-    except KeyError as e:
-        return e
 
 
 class XmlModelAdapter(MouseModelAdapter):
     """
+    This class implements the MouseModelAdapter interface
+    and implements transform method to transform XML-formated string
+    into Mouse object or MouseList object
     Example of mouse xml raw data
     <mouse>
        <physical_id></physical_id>
@@ -132,7 +83,88 @@ class XmlModelAdapter(MouseModelAdapter):
         return None
 
 
+def parse_mouse(raw_dict):
+    """
+    This function converts the xml dictionary into the Mouse object
+    """
+    try:
+        mouse = Mouse(
+            physical_id=raw_dict['physical_id'],
+            handler=raw_dict['handler'],
+            gender=raw_dict['gender'],
+            mouseline=raw_dict['mouseline'],
+            genotype=raw_dict['genotype'],
+            birth_date=raw_dict['birth_date'],
+            end_date=raw_dict['end_date'],
+            cog=raw_dict['cog'],
+            phenotype=raw_dict['phenotype'],
+            project_title=raw_dict['project_title'],
+            experiment=raw_dict['experiment'],
+            comment=raw_dict['comment']
+        )
+        if 'pfa_record' in raw_dict.keys():
+            pfa_record_xml = raw_dict['pfa_record']
+            mouse.pfa_record = parse_sub_advanced_record(pfa_record_xml)
+        if 'freeze_record' in raw_dict.keys():
+            freeze_record_xml = raw_dict['freeze_record']
+            mouse.freeze_record = parse_sub_record(freeze_record_xml)
+
+        return mouse
+    except KeyError as e:
+        return e
+
+
+class JsonModelAdapter(MouseModelAdapter):
+    """
+    This class implements the MouseModelAdapter interface
+    and implements transform method to transform Json string
+    into Mouse object or MouseList object
+    Example of mouse json raw data
+    {"physical_id": "6670C10",
+     "handler": "Alex Ang",
+     "gender": "F",
+     "mouseline": "Lgr5/Kai/Tomato",
+     "genotype": "Lgr5(T/+), Kai(T/+), Tomato(KI/+)",
+     "birth_date": "2017-08-27",
+     "end_date": "2017-11-03",
+     "cog": "No Data",
+     "phenotype": "No Data",
+     "project_title": "Role of Lgr5 in liver regeneration",
+     "comment": "19 Sept'17: On DOX / 3 Nov'17: Harvested Small Intestine and Liver for PFA",
+     "freeze_record":
+         {"liver": 0,
+          "liver_tumor": 0,
+          "others": "No Data"
+         },
+     "pfa_record":
+         {"liver": 1,
+          "liver_tumor": 0,
+          "small_intenstine": 1,
+          "small_intenstine_tumor": 0,
+          "skin": 0,
+          "skin_tumor": 0,
+          "others": "No Data"
+         }
+     }
+    """
+    def transform(self, raw_data):
+        mouse_dict = json.loads(raw_data)
+        if 'mouse_list' in mouse_dict.keys():
+            p_obj = MouseList()
+            array_json_list = mouse_dict['mouse_list']
+            for json_m in array_json_list:
+                p_obj.add_mouse(_convert_json_to_mouse(json_m))
+        else:
+            p_obj = _convert_json_to_mouse(mouse_dict)
+
+        return p_obj
+
+
 def _convert_json_to_mouse(json_m):
+    """
+    This function converts a json dictionary of a mouse information
+    into Mouse object
+    """
     mouse = Mouse(
         physical_id=json_m['physical_id'],
         handler=json_m['handler'],
@@ -161,15 +193,38 @@ def _convert_json_to_mouse(json_m):
     return mouse
 
 
-class JsonModelAdapter(MouseModelAdapter):
-    def transform(self, raw_data):
-        mouse_dict = json.loads(raw_data)
-        if 'mouse_list' in mouse_dict.keys():
-            p_obj = MouseList()
-            array_json_list = mouse_dict['mouse_list']
-            for json_m in array_json_list:
-                p_obj.add_mouse(_convert_json_to_mouse(json_m))
-        else:
-            p_obj = _convert_json_to_mouse(mouse_dict)
+def parse_sub_record(raw_dict):
+    """
+    This function takes the json dictionary of a record information
+    into Record object of the Mouse object
+    """
+    try:
+        record = Record(
+            liver=raw_dict['liver'],
+            liver_tumor=raw_dict['liver_tumor'],
+            others=raw_dict['others']
+        )
+        return record
+    except KeyError as e:
+        return e
 
-        return p_obj
+
+def parse_sub_advanced_record(raw_dict):
+    """
+    This function takes the json dictionary of a record information
+    into Record object of the Mouse object
+    """
+    try:
+        record = AdvancedRecord(
+            liver=raw_dict['liver'],
+            liver_tumor=raw_dict['liver_tumor'],
+            small_intenstine=raw_dict['small_intenstine'],
+            small_intenstine_tumor=raw_dict['small_intenstine_tumor'],
+            skin=raw_dict['skin'],
+            skin_tumor=raw_dict['skin_tumor'],
+            others=raw_dict['others']
+        )
+        return record
+    except KeyError as e:
+        return e
+

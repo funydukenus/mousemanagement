@@ -6,12 +6,20 @@ import json
 
 
 class GenericMouseViewer(ABC):
+    """
+    This is the Mouse Model Adapter Class.
+    Subclass must implement the transform which converts either MouseList object or Mouse object to
+    the any specific raw_data for transmission
+    """
     @abstractmethod
     def transform(self, mouse_data):
         pass
 
 
 def _create_sub_node_from(node, tag_name, value=None):
+    """
+    This function helps creates the subnode of speficied node with the tag name and value in the XMLTree
+    """
     sub_node = SubElement(node, tag_name)
     if value is not None:
         sub_node.text = str(value)
@@ -19,7 +27,8 @@ def _create_sub_node_from(node, tag_name, value=None):
 
 
 def prettify(elem):
-    """Return a pretty-printed XML string for the Element.
+    """
+    Return a pretty-printed XML string for the Element.
     """
     rough_string = tostring(elem, 'utf-8')
     reparsed = minidom.parseString(rough_string)
@@ -27,6 +36,10 @@ def prettify(elem):
 
 
 class XmlMouseViewer(GenericMouseViewer):
+    """
+    This class implemented the transform function and converts either Mouse or MouseList object into XML-formatted
+    raw data string
+    """
     def __init__(self):
         self.document = None
 
@@ -48,10 +61,16 @@ class XmlMouseViewer(GenericMouseViewer):
         return prettify(self.document)
 
     def _create_root_node(self, root_node_name):
+        """
+        This method creates a root node of the document
+        """
         self.document = Element(root_node_name)
         return self.document
 
     def _create_comment_node(self, comment):
+        """
+        This method creates a comment node of the document
+        """
         comment = Comment(comment)
         if self.document is not None:
             self.document.append(comment)
@@ -61,6 +80,9 @@ class XmlMouseViewer(GenericMouseViewer):
         return comment
 
     def _add_mouse_node(self, mouse, parent_node=None):
+        """
+         This method creates a mouse node of the given parent node if any
+         """
         # if parent_node is absent
         # either we append to the document or
         # we make this a the root node to the document
@@ -104,7 +126,17 @@ class XmlMouseViewer(GenericMouseViewer):
         return mouse_node
 
 
+class JsonMouseViewer(GenericMouseViewer):
+    def transform(self, mouse_data):
+        data = _convert_mouse_to_dict(mouse_data)
+        return json.dumps(data)
+
+
 def _distribute_data_to_mouse(mouse_data):
+    """
+    This function distributed the mouse object information into the python dictionary object for easier json
+    parsing process
+    """
     dict_m = {
         'physical_id': mouse_data.physical_id,
         'handler': mouse_data.handler,
@@ -137,6 +169,10 @@ def _distribute_data_to_mouse(mouse_data):
 
 
 def _convert_mouse_to_dict(mouse_data):
+    """
+    This is the function restricte to this module which converts the mouse or moust list data
+    into Json formmated string
+    """
     if isinstance(mouse_data, MouseList):
         dict_m = {'mouse_list': []}
         arr_m = dict_m['mouse_list']
@@ -148,8 +184,3 @@ def _convert_mouse_to_dict(mouse_data):
     else:
         return _distribute_data_to_mouse(mouse_data)
 
-
-class JsonMouseViewer(GenericMouseViewer):
-    def transform(self, mouse_data):
-        data = _convert_mouse_to_dict(mouse_data)
-        return json.dumps(data)

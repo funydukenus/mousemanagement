@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
-
 from harvestmouseapp.mvc_model.model import MouseList, ColumnList
 
 
 class FilterType(Enum):
+    """
+    This is the enumuration of the filter type which represents different method of filtering of mouse list
+    """
     GTE = 0
     GT = 1
     LTE = 2
@@ -15,6 +17,10 @@ class FilterType(Enum):
 
 
 def get_enum_by_value(num):
+    """
+    This is the public function which represents the FilterType into index which provides easier and convienience
+    way of representing the type of filter clients wishs to have
+    """
     if num == 0:
         return FilterType.GTE
     elif num == 1:
@@ -30,7 +36,12 @@ def get_enum_by_value(num):
 
 
 class FilterOption:
-
+    """
+    This class represents the filter option specified by the client including]
+    1. The specific column the client wish the filter to depending on.
+    2. The value of the criteria
+    3. The way of the criteria to be compared with the data. i.e, GT, Greater than the value of the criteria
+    """
     def __init__(self, column_name, value, filter_type=FilterType.CONTAINS):
         self.__column_name = ColumnList.header_name.value + column_name
         self.__value = value
@@ -63,12 +74,21 @@ class FilterOption:
 
 
 class GenericMouseFilter(ABC):
+    """
+    Expectes the subclass to implement the filter method to filter the mouse_input based on the
+    filter option
+    """
     @abstractmethod
     def filter(self, mouse_input, filter_option):
         pass
 
 
 class MouseFilter(GenericMouseFilter):
+    """
+    This method filters the mouse list based on the filter option provided by the client.
+    It will firstly fetch the entire mouse list and filter the mouse list filter option by
+    filter option
+    """
     def filter(self, mouse_input, filter_option):
         return_mouse_list = MouseList()
         value = filter_option.value
