@@ -79,7 +79,7 @@ def harvested_mouse_list(request):
 
                     fitler_options.append(filter_option)
 
-    mouse_list = mouse_controller_g.get_mouse_for_transfer(filter_option=fitler_options, force=True)
+    mouse_list = mouse_controller_g.get_mouse_for_transfer(filter_option=fitler_options)
 
     return Response(mouse_list)
 
