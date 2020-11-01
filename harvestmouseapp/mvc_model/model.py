@@ -144,7 +144,7 @@ class MouseList:
 
             found = False
 
-            if is_list(mouse_input):
+            if is_mouse_list(mouse_input):
                 for m in self._mouse_list:
                     for m_o in mouse_input:
                         if not list_check_by_id:
