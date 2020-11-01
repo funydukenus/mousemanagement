@@ -7,18 +7,26 @@ from consolemenu.items import *
 import requests
 import pandas as pd
 
-API_ENDPOINT = 'http://127.0.0.1:8000/harvestedmouse/'
-INSERT_API_ENDPOINT = API_ENDPOINT + 'insert'
-UPDATE_API_ENDPOINT = API_ENDPOINT + 'update'
-LIST_API_ENDPOINT   = API_ENDPOINT + 'list'
-DELETE_ALL_API_ENDPOINT = API_ENDPOINT + 'delete/all'
+API_ENDPOINT = 'http://127.0.0.1:8000/'
+HARVESTED_MOUSE_API_ENDPOINT = API_ENDPOINT + 'harvestedmouse/'
+INSERT_API_ENDPOINT = HARVESTED_MOUSE_API_ENDPOINT + 'insert'
+UPDATE_API_ENDPOINT = HARVESTED_MOUSE_API_ENDPOINT + 'update'
+LIST_API_ENDPOINT = HARVESTED_MOUSE_API_ENDPOINT + 'list'
+DELETE_ALL_API_ENDPOINT = HARVESTED_MOUSE_API_ENDPOINT + 'delete/all'
+
+USER_API_ENDPOINT = API_ENDPOINT + 'accounts/'
+CREATE_USER_API_ENDPOINT = USER_API_ENDPOINT + 'create'
+LOGIN_USER_API_ENDPOINT = USER_API_ENDPOINT + 'login'
+LOGOUT_USER_API_ENDPOINT = USER_API_ENDPOINT + 'logout'
+CHANGE_PASSWORD_USER_API_ENDPOINT = USER_API_ENDPOINT + 'change_password'
+CREATE_SUPER_USER_USER_API_ENDPOINT = USER_API_ENDPOINT + 'create_super_user'
+IS_USER_API_ENDPOINT = USER_API_ENDPOINT + 'is_user_empty'
+
+menu = ConsoleMenu('Backend Harvested Mouse Management', 'FNY Lab', show_exit_option=False)
 
 
 # Start the console gui
 def gui_start():
-    # Create the menu
-    menu = ConsoleMenu('Backend Harvested Mouse Management', 'FNY Lab')
-
     # Create some items
 
     # MenuItem is the base class for all items, it doesn't do anything when selected
@@ -31,14 +39,95 @@ def gui_start():
 
     function_item_delete_all = FunctionItem("Delete all from db", delete_all_from_db)
 
+    function_user_create = FunctionItem("Create user", create_user)
+
+    function_super_user_create = FunctionItem("Create super user", create_super_user)
+
+    function_user_login = FunctionItem("User login", user_login)
+
+    function_user_logout = FunctionItem("User loggout", user_logout)
+
+    function_exit = FunctionItem("Exit", exit_console)
+
     # Once we're done creating them, we just add the items to the menu
     menu.append_item(menu_item)
     menu.append_item(function_item_list)
     menu.append_item(function_item_insert)
     menu.append_item(function_item_delete_all)
-
+    menu.append_item(function_user_create)
+    menu.append_item(function_super_user_create)
+    menu.append_item(function_user_login)
+    menu.append_item(function_user_logout)
+    menu.append_item(function_exit)
     # Finally, we call show to show the menu and allow the user to interact
     menu.show()
+
+
+def create_user():
+    username = input("Enter your username: ")
+    password = input("Enter your password: ")
+    email = input("Enter your email: ")
+
+    post_data = {
+        'username': username,
+        'password': password,
+        'email': email
+    }
+
+    r = requests.post(url=CREATE_USER_API_ENDPOINT, data=post_data)
+    if r.status_code == 201:
+        print('OK')
+    else:
+        print('FAIL')
+
+
+def create_super_user():
+    username = input("Enter your username: ")
+    password = input("Enter your password: ")
+    email = input("Enter your email: ")
+    secret_key = 'LAB_AADDGGE'
+
+    post_data = {
+        'username': username,
+        'password': password,
+        'email': email,
+        'secret_key': secret_key
+    }
+
+    r = requests.post(url=CREATE_SUPER_USER_USER_API_ENDPOINT, data=post_data)
+    if r.status_code == 201:
+        print('OK')
+    else:
+        print('FAIL')
+
+
+def user_logout():
+    r = requests.get(url=LOGOUT_USER_API_ENDPOINT)
+    if r.status_code == 200:
+        print('OK')
+    else:
+        print('FAIL')
+
+
+def user_login():
+    username = input("Enter your username: ")
+    password = input("Enter your password: ")
+
+    post_data = {
+        'username': username,
+        'password': password
+    }
+
+    r = requests.post(url=LOGIN_USER_API_ENDPOINT, data=post_data)
+    if r.status_code == 200:
+        print('OK')
+    else:
+        print('FAIL')
+
+
+def exit_console():
+    user_logout()
+    menu.exit()
 
 
 def list_all_mouse_on_screen():
@@ -48,7 +137,11 @@ def list_all_mouse_on_screen():
     if r.status_code == 200:
         with open('output.csv', 'w') as f_open:
             f_open.writelines(r.text)
-    print('Finished')
+            print('Finished')
+    elif r.status_code == 401:
+        print('Not allowed')
+    else:
+        print('Something wrong')
 
 
 def import_csv_into_db():

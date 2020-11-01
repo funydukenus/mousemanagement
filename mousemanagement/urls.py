@@ -22,6 +22,8 @@ from harvestmouseapp.views import harvested_mouse_delete
 from harvestmouseapp.views import harvested_all_mouse_delete
 from harvestmouseapp.views import harvested_import_mouse
 from harvestmouseapp.views import get_data_option_list
+from usermanagement.views import user_login, user_logout, user_change_password, user_create, create_super_user, \
+    is_user_table_empty
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -32,5 +34,11 @@ urlpatterns = [
     path('harvestedmouse/delete', harvested_mouse_delete),
     path('harvestedmouse/delete/all', harvested_all_mouse_delete),
     path('harvestedmouse/import', harvested_import_mouse),
-    path('harvestedmouse/getdatalist', get_data_option_list)
+    path('harvestedmouse/getdatalist', get_data_option_list),
+    path('accounts/login', user_login),
+    path('accounts/logout', user_logout),
+    path('accounts/change_password', user_change_password),
+    path('accounts/create', user_create),
+    path('accounts/create_super_user', create_super_user),
+    path('accounts/is_user_empty', is_user_table_empty)
 ]

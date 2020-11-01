@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import DatabaseError
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -28,6 +29,19 @@ class UploadFileForm(forms.Form):
     file = forms.FileField()
 
 
+def _check_if_user_is_login(session):
+    try:
+        user = User.objects.get(username=session['username'])
+        if user.is_active and user.is_authenticated and user.is_staff:
+            return True
+        else:
+            return False
+    except User.DoesNotExist:
+        return False
+    except KeyError:
+        return False
+
+
 # With api view wrapper, method validation is auto-checked
 # wrong API request will auto return Unathorized method
 @api_view(['GET'])
@@ -36,6 +50,9 @@ def harvested_mouse_list(request):
     List all the harvested mouse
     { 'filter': '[column_name_1]@[value_1]@[filter_option_1]$[column_name_2][value_2][filter_option_2]' }
     """
+    if not _check_if_user_is_login(request.session):
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
     option_found = False
     fitler_options = None
     if len(request.query_params) != 0:
@@ -75,6 +92,9 @@ def harvested_mouse_force_list(request):
     by Json
     { 'filter': '[column_name_1]@[value_1]@[filter_option_1]$[column_name_2][value_2][filter_option_2]' }
     """
+    if not _check_if_user_is_login(request.session):
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
     mouse_list = mouse_controller_g.get_mouse_for_transfer(force=True)
 
     return Response(mouse_list)
@@ -85,6 +105,9 @@ def harvested_mouse_insertion(request):
     """
     Insertion of the harvested mouse into database
     """
+    if not _check_if_user_is_login(request.session):
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
     try:
         mouse_controller_g.create_mouse(request.data)
         return Response(status=status.HTTP_201_CREATED)
@@ -101,6 +124,9 @@ def harvested_mouse_update(request):
     """
     Update of the harvested mouse into database
     """
+    if not _check_if_user_is_login(request.session):
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
     try:
         mouse_controller_g.update_mouse(request.data)
         return Response(status=status.HTTP_200_OK)
@@ -117,6 +143,9 @@ def harvested_mouse_delete(request):
     """
     Delete of the selected harvested mouse
     """
+    if not _check_if_user_is_login(request.session):
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
     try:
         mouse_controller_g.delete_mouse(request.data)
         return Response(status=status.HTTP_200_OK)
@@ -136,6 +165,9 @@ def harvested_all_mouse_delete(request):
     """
     Delete of the selected harvested mouse
     """
+    if not _check_if_user_is_login(request.session):
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
     try:
         mouse_list_in_xml = mouse_controller_g.get_mouse_for_transfer()
         mouse_controller_g.delete_mouse(mouse_list_in_xml)
@@ -156,6 +188,9 @@ def harvested_import_mouse(request):
     Handling of the process of importing external
     csv file for insertion of list of mouse
     """
+    if not _check_if_user_is_login(request.session):
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
     form = UploadFileForm(request.POST, request.FILES)
     if form.is_valid() and request.FILES['file'].name.endswith('.csv'):
         filename = save_uploaded_file(request.FILES['file'])
@@ -168,6 +203,9 @@ def get_data_option_list(request):
     """
     Providing the selecting option to the client
     """
+    if not _check_if_user_is_login(request.session):
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
     # Get the list of mouse object first
     harvesed_mouse_list = mouse_controller_g.get_mouse_for_transfer(transform=False)
     mouseline_list = []
