@@ -169,7 +169,7 @@ def harvested_all_mouse_delete(request):
     #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     try:
-        mouse_list_in_xml = mouse_controller_g.get_mouse_for_transfer()
+        mouse_list_in_xml = mouse_controller_g.get_mouse_for_transfer(force=True)
         mouse_controller_g.delete_mouse(mouse_list_in_xml)
     except ValueError as e:
         return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
