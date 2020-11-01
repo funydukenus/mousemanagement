@@ -95,7 +95,8 @@ class MouseController:
         Givne the entire mouse or mouse list information in specified data format
         and deletes those specified mouse via the physical id
         """
-        converted_data = self._model_adapter.transform(raw_data)
+        # Calling this function to init the mouse list if possible
+        converted_data = self._model_adapter.transform(raw_data)  # MouseList object
         return self._db_adapter.delete_mouse(converted_data)
 
     def get_num_total_mouse(self):

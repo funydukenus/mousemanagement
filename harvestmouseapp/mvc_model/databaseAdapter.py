@@ -265,7 +265,7 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
 
             self._mouse_list.add_mouse(m)
 
-    def _init_cache_mouse_list_if_possible(self, force=True):
+    def init_cache_mouse_list_if_possible(self, force=True):
         """
         This function helps to initialize the mouse list obj and mark it
         as intialized. So next time it won't intitialized again.

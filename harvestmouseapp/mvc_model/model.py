@@ -144,7 +144,7 @@ class MouseList:
 
             found = False
 
-            if is_mouse_list(mouse_input):
+            if is_list(mouse_input):
                 for m in self._mouse_list:
                     for m_o in mouse_input:
                         if not list_check_by_id:
@@ -166,7 +166,7 @@ class MouseList:
                             found = True
                             break
                     else:
-                        if m.physical_id == mouse_input.physical_id:
+                        if m.physical_id == physical_id:
                             found = True
                             break
                     found = False
@@ -518,7 +518,7 @@ def check_content_type(input_check, type_check_func):
     check if the given array or instance
     with the given type
     """
-    if is_list(input_check):
+    if is_mouse_list(input_check):
         for m in input_check:
             if not type_check_func(m):
                 return False
