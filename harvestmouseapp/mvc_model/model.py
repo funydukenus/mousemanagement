@@ -72,7 +72,7 @@ class MouseList:
         if self.is_mouse_in_list(mouse_input=mouse_input, list_check_by_id=True):
             self.remove_mouse(mouse_input)
 
-        if is_list(mouse_input):
+        if is_mouse_list(mouse_input):
             self._mouse_list.extend(mouse_input)
         else:
             self._mouse_list.append(mouse_input)
