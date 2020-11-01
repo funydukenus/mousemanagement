@@ -148,7 +148,11 @@ class JsonModelAdapter(MouseModelAdapter):
      }
     """
     def transform(self, raw_data):
-        mouse_dict = json.loads(raw_data)
+        try:
+            mouse_dict = json.loads(raw_data)
+        except TypeError:
+            # Try first, then just use the raw_Data
+            mouse_dict = raw_data
         if 'mouse_list' in mouse_dict.keys():
             p_obj = MouseList()
             array_json_list = mouse_dict['mouse_list']
