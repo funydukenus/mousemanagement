@@ -7,8 +7,8 @@ from consolemenu.items import *
 import requests
 import pandas as pd
 
-API_ENDPOINT = 'https://mousemanagement.herokuapp.com/'
-# API_ENDPOINT = 'http://127.0.0.1:8000/'
+# API_ENDPOINT = 'https://mousemanagement.herokuapp.com/'
+API_ENDPOINT = 'http://127.0.0.1:8000/'
 HARVESTED_MOUSE_API_ENDPOINT = API_ENDPOINT + 'harvestedmouse/'
 INSERT_API_ENDPOINT = HARVESTED_MOUSE_API_ENDPOINT + 'insert'
 UPDATE_API_ENDPOINT = HARVESTED_MOUSE_API_ENDPOINT + 'update'

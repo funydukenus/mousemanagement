@@ -166,7 +166,7 @@ class MouseList:
                             found = True
                             break
                     else:
-                        if m.physical_id == physical_id:
+                        if m.physical_id == mouse_input.physical_id:
                             found = True
                             break
                     found = False
