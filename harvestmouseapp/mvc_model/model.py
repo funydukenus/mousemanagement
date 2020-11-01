@@ -518,7 +518,7 @@ def check_content_type(input_check, type_check_func):
     check if the given array or instance
     with the given type
     """
-    if is_mouse_list(input_check):
+    if is_list(input_check):
         for m in input_check:
             if not type_check_func(m):
                 return False
