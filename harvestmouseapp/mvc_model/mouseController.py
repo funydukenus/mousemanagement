@@ -67,9 +67,6 @@ class MouseController:
         """
         filtered_moust_list = self._db_adapter.get_all_mouse(force)
 
-        if filtered_moust_list.get_size() == 0:
-            filtered_moust_list = self._mouse_viewer.transform(filtered_moust_list=None)
-
         if transform:
             if filter_option is not None:
                 # Filtered mouse list can ba a list of mouse or single individual mouse object
