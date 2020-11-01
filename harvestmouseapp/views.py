@@ -50,8 +50,8 @@ def harvested_mouse_list(request):
     List all the harvested mouse
     { 'filter': '[column_name_1]@[value_1]@[filter_option_1]$[column_name_2][value_2][filter_option_2]' }
     """
-    if not _check_if_user_is_login(request.session):
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
+    #if not _check_if_user_is_login(request.session):
+    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     option_found = False
     fitler_options = None
@@ -92,8 +92,8 @@ def harvested_mouse_force_list(request):
     by Json
     { 'filter': '[column_name_1]@[value_1]@[filter_option_1]$[column_name_2][value_2][filter_option_2]' }
     """
-    if not _check_if_user_is_login(request.session):
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
+    #if not _check_if_user_is_login(request.session):
+    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     mouse_list = mouse_controller_g.get_mouse_for_transfer(force=True)
 
@@ -105,8 +105,8 @@ def harvested_mouse_insertion(request):
     """
     Insertion of the harvested mouse into database
     """
-    if not _check_if_user_is_login(request.session):
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
+    #if not _check_if_user_is_login(request.session):
+    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     try:
         mouse_controller_g.create_mouse(request.data)
@@ -124,8 +124,8 @@ def harvested_mouse_update(request):
     """
     Update of the harvested mouse into database
     """
-    if not _check_if_user_is_login(request.session):
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
+    #if not _check_if_user_is_login(request.session):
+    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     try:
         mouse_controller_g.update_mouse(request.data)
@@ -143,8 +143,8 @@ def harvested_mouse_delete(request):
     """
     Delete of the selected harvested mouse
     """
-    if not _check_if_user_is_login(request.session):
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
+    #if not _check_if_user_is_login(request.session):
+    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     try:
         mouse_controller_g.delete_mouse(request.data)
@@ -165,8 +165,8 @@ def harvested_all_mouse_delete(request):
     """
     Delete of the selected harvested mouse
     """
-    if not _check_if_user_is_login(request.session):
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
+    #if not _check_if_user_is_login(request.session):
+    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     try:
         mouse_list_in_xml = mouse_controller_g.get_mouse_for_transfer()
@@ -188,8 +188,8 @@ def harvested_import_mouse(request):
     Handling of the process of importing external
     csv file for insertion of list of mouse
     """
-    if not _check_if_user_is_login(request.session):
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
+    #if not _check_if_user_is_login(request.session):
+    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     form = UploadFileForm(request.POST, request.FILES)
     if form.is_valid() and request.FILES['file'].name.endswith('.csv'):
@@ -203,8 +203,8 @@ def get_data_option_list(request):
     """
     Providing the selecting option to the client
     """
-    if not _check_if_user_is_login(request.session):
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
+    #if not _check_if_user_is_login(request.session):
+    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     # Get the list of mouse object first
     harvesed_mouse_list = mouse_controller_g.get_mouse_for_transfer(transform=False)
