@@ -127,7 +127,7 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
            presented in the mouse list. Return a list of mice that are not existed in the mouse
            list
         """
-        self._init_cache_mouse_list_if_possible(force=True)  # Calling this function to init the mouse list if possible
+        self.init_cache_mouse_list_if_possible(force=True)  # Calling this function to init the mouse list if possible
 
         return_mouse_input = MouseList()  # This mouse list will be return as mouse list of non-existed mice
 
