@@ -5,7 +5,7 @@ from harvestmouseapp.mvc_model.Error import DuplicationMouseError, MouseNotFound
 from harvestmouseapp.mvc_model.model import Mouse, MouseList
 
 from django.core.cache import caches, InvalidCacheBackendError
-from django.core.cache import cache
+
 
 class GenericDatabaseAdapter(ABC):
     """
@@ -19,11 +19,7 @@ class GenericDatabaseAdapter(ABC):
     """
 
     def __init__(self):
-        self._mouse_list = None
-        self.get_from_cache()
-        if self._mouse_list is None:
-            cache.set('ml', MouseList())
-            self.get_from_cache()
+        self._mouse_list = MouseList()
 
     @abstractmethod
     def create_mouse(self, mouse_input):
@@ -40,12 +36,6 @@ class GenericDatabaseAdapter(ABC):
     @abstractmethod
     def delete_mouse(self, mouse_input):
         pass
-
-    def save_to_cache(self):
-        cache.set('ml', self._mouse_list)
-
-    def get_from_cache(self):
-        self._mouse_list = cache.get('ml')
 
 
 class GenericSqliteConnector(GenericDatabaseAdapter):
@@ -80,8 +70,6 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
             self._convert_and_add_mouse_into_cache_if_possible(
                 mouse_ojb=mouse_input, return_mouse_input=return_mouse_input)
 
-        self.save_to_cache()
-
         if len(return_mouse_input) != 0:
             raise DuplicationMouseError(return_mouse_input)
 
@@ -110,12 +98,10 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
             self._convert_and_update_mouse_into_cache_if_possible(
                 mouse_ojb=mouse_input, return_mouse_input=return_mouse_input)
 
-        self.save_to_cache()
-
         if len(return_mouse_input) != 0:
             raise MouseNotFoundError(return_mouse_input)
 
-    def get_all_mouse(self, force=False):
+    def get_all_mouse(self):
         """
         This is an overrided get_all_mouse method from GenericDatabaseAdapter that
         retrive the MouseList obj either from cache or from the database. Supposely
@@ -123,15 +109,10 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
         is set to True, the existing mouse_list obj will be clear and replace with the newly
         read data in the database
         """
-        # Get from cache again
-        self.get_from_cache()
-        if force or self._mouse_list.get_size() == 0:
-            self._mouse_list.clear()
-            mouse_data_from_db = HarvestedMouse.objects.all()
-            self._convert_sqlite_db_mouse_object_and_save_into_cache(mouse_data_from_db)
-            return self._mouse_list
-        else:
-            return self._mouse_list
+        self._mouse_list.clear()
+        mouse_data_from_db = HarvestedMouse.objects.all()
+        self._convert_sqlite_db_mouse_object_and_save_into_cache(mouse_data_from_db)
+        return self._mouse_list
 
     def delete_mouse(self, mouse_input):
         """
@@ -156,8 +137,6 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
         else:
             self._convert_and_delete_mouse_into_cache_if_possible(
                 mouse_ojb=mouse_input, return_mouse_input=return_mouse_input)
-
-        self.save_to_cache()
 
         if len(return_mouse_input) != 0:
             raise MouseNotFoundError(mouse_input)
@@ -291,9 +270,8 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
         as intialized. So next time it won't intitialized again.
         """
         if not self.has_initialized_list_mouse:
-            self.get_all_mouse(force)
+            self.get_all_mouse()
             self.has_initialized_list_mouse = True
-            self.save_to_cache()
 
     def _convert_and_add_mouse_into_cache_if_possible(self, mouse_ojb, return_mouse_input):
         """

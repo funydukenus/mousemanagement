@@ -1569,7 +1569,7 @@ class SqliteDatabaserTestCase(TestCase):
     # Pass requirement
     # 1. Check if the mouse can be retrived correctly from the databse
     def test_get_mouse_list_from_db(self):
-        mouse_output = self.db_adapter.get_all_mouse(True)
+        mouse_output = self.db_adapter.get_all_mouse()
         if not (mouse_output == self.mouse_list):
             self.assertTrue(False)
 
@@ -1608,7 +1608,7 @@ class SqliteDatabaserTestCase(TestCase):
         except DuplicationMouseError as e:
             print(e.message)
 
-        mouse_output = self.db_adapter.get_all_mouse(True)
+        mouse_output = self.db_adapter.get_all_mouse()
         if not (mouse_output == self.mouse_list):
             self.assertTrue(False)
 
@@ -1619,14 +1619,14 @@ class SqliteDatabaserTestCase(TestCase):
 
     def test_update_mouse_list(self):
         # Force to get a new mouse list
-        mouse_list_before = copy.deepcopy(self.db_adapter.get_all_mouse(True))
+        mouse_list_before = copy.deepcopy(self.db_adapter.get_all_mouse())
 
         self.sample_mouse_2_copy = copy.deepcopy(self.sample_mouse_2)
         self.sample_mouse_2_copy.handler = 'CBA'
         self.db_adapter.update_mouse(self.sample_mouse_2_copy)
 
         # Force to get a new mouse list
-        mouse_list = self.db_adapter.get_all_mouse(True)
+        mouse_list = self.db_adapter.get_all_mouse()
         mouse = mouse_list.get_mouse_by_id(self.sample_mouse_2_copy.physical_id)
         if not mouse.handler == 'CBA':
             self.assertTrue(False)
@@ -1636,7 +1636,7 @@ class SqliteDatabaserTestCase(TestCase):
 
     def test_update_mouse_list_list(self):
         # Force to get a new mouse list
-        mouse_list_before = copy.deepcopy(self.db_adapter.get_all_mouse(True))
+        mouse_list_before = copy.deepcopy(self.db_adapter.get_all_mouse())
 
         self.sample_mouse_1_copy = copy.deepcopy(self.sample_mouse_1)
         self.sample_mouse_1_copy.handler = 'ABC'
@@ -1649,7 +1649,7 @@ class SqliteDatabaserTestCase(TestCase):
         self.db_adapter.update_mouse(updating_mouse_list)
 
         # Force to get a new mouse list
-        mouse_list = self.db_adapter.get_all_mouse(True)
+        mouse_list = self.db_adapter.get_all_mouse()
         mouse = mouse_list.get_mouse_by_id(self.sample_mouse_1_copy.physical_id)
         if not mouse.handler == 'ABC':
             self.assertTrue(False)
@@ -1670,7 +1670,7 @@ class SqliteDatabaserTestCase(TestCase):
         if not(mouselist.get_size() == 0):
             self.assertTrue(False)
 
-        mouselist = self.db_adapter.get_all_mouse(True)
+        mouselist = self.db_adapter.get_all_mouse()
 
         if not(mouselist.get_size() == 0):
             self.assertTrue(False)
@@ -1687,7 +1687,7 @@ class SqliteDatabaserTestCase(TestCase):
         if not(mouselist.get_size() == 0):
             self.assertTrue(False)
 
-        mouselist = self.db_adapter.get_all_mouse(True)
+        mouselist = self.db_adapter.get_all_mouse()
 
         if not(mouselist.get_size() == 0):
             self.assertTrue(False)
@@ -1709,7 +1709,7 @@ class SqliteDatabaserTestCase(TestCase):
         if mouse is not None:
             self.assertTrue(False)
 
-        mouselist = self.db_adapter.get_all_mouse(True)
+        mouselist = self.db_adapter.get_all_mouse()
 
         if not(mouselist.get_size() == 1):
             self.assertTrue(False)

@@ -65,7 +65,7 @@ class MouseController:
         if raw_data is None, get full list of mouse
         filter option only apply to the list of mouse
         """
-        filtered_moust_list = self._db_adapter.get_all_mouse(force)
+        filtered_moust_list = self._db_adapter.get_all_mouse()
 
         if transform:
             if filter_option is not None:
