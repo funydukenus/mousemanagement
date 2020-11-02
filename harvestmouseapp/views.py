@@ -95,7 +95,36 @@ def harvested_mouse_force_list(request):
     #if not _check_if_user_is_login(request.session):
     #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-    mouse_list = mouse_controller_g.get_mouse_for_transfer(force=True)
+    #if not _check_if_user_is_login(request.session):
+    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    option_found = False
+    fitler_options = None
+    if len(request.query_params) != 0:
+        option_found = True
+
+    if option_found:
+        if 'filter' in request.query_params.keys():
+            option_filter_str = request.query_params['filter']
+            split_filter_options = option_filter_str.split('$')
+            fitler_options = []
+            if isinstance(split_filter_options, list):
+
+                for filter_o in split_filter_options:
+                    split_detailed_option = filter_o.split('@')
+
+                    filter_option = FilterOption(
+                        column_name=split_detailed_option[0],
+                        value=split_detailed_option[1]
+                    )
+                    try:
+                        filter_option.filter_type = get_enum_by_value(int(split_detailed_option[2]))
+                    except IndexError:
+                        pass
+
+                    fitler_options.append(filter_option)
+
+    mouse_list = mouse_controller_g.get_mouse_for_transfer(force=True, filter_option=fitler_options)
 
     return Response(mouse_list)
 

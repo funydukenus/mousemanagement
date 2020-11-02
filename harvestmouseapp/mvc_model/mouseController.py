@@ -65,9 +65,7 @@ class MouseController:
         if raw_data is None, get full list of mouse
         filter option only apply to the list of mouse
         """
-        # Current heruko must read from database,
-        # it will cache somehwhere in the system
-        filtered_moust_list = self._db_adapter.get_all_mouse(force=True)
+        filtered_moust_list = self._db_adapter.get_all_mouse(force)
 
         if transform:
             if filter_option is not None:

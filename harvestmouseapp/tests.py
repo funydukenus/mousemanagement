@@ -314,7 +314,7 @@ class HarvestedMouseTestCase(TestCase):
         check_model_view_objects(
             test_cases=self,
             view_list_class=harvested_mouse_list,
-            view_url='/harvestedmouse/list',
+            view_url='/harvestedmouse/force_list',
             expect_num_of_return=2,
             list_to_matched=['handler1', 'handler2'],
             expect_num_of_remain=0,
@@ -399,7 +399,7 @@ class HarvestedMouseTestCase(TestCase):
         check_model_view_objects(
             test_cases=self,
             view_list_class=harvested_mouse_list,
-            view_url='/harvestedmouse/list',
+            view_url='/harvestedmouse/force_list',
             expect_num_of_return=2,
             list_to_matched=['handler1'],
             expect_num_of_remain=0,
@@ -484,7 +484,7 @@ class HarvestedMouseTestCase(TestCase):
         check_model_view_objects(
             test_cases=self,
             view_list_class=harvested_mouse_list,
-            view_url='/harvestedmouse/list',
+            view_url='/harvestedmouse/force_list',
             expect_num_of_return=group_1_stop - 1,
             list_to_matched=list_to_matched,
             expect_num_of_remain=0,
@@ -562,7 +562,7 @@ class HarvestedMouseTestCase(TestCase):
         check_model_view_objects(
             test_cases=self,
             view_list_class=harvested_mouse_list,
-            view_url='/harvestedmouse/list',
+            view_url='/harvestedmouse/force_list',
             expect_num_of_return=group_2_stop - group_2_start,
             list_to_matched=list_to_matched.copy(),
             expect_num_of_remain=0,
@@ -585,7 +585,7 @@ class HarvestedMouseTestCase(TestCase):
         check_model_view_objects(
             test_cases=self,
             view_list_class=harvested_mouse_list,
-            view_url='/harvestedmouse/list',
+            view_url='/harvestedmouse/force_list',
             expect_num_of_return=group_2_stop - group_2_start - 1,
             list_to_matched=list_to_matched,
             expect_num_of_remain=0,
@@ -646,7 +646,7 @@ class HarvestedMouseTestCase(TestCase):
         check_model_view_objects(
             test_cases=self,
             view_list_class=harvested_mouse_list,
-            view_url='/harvestedmouse/list',
+            view_url='/harvestedmouse/force_list',
             expect_num_of_return=mouse_list.get_size() + 1,
             list_to_matched=list_to_matched,
             expect_num_of_remain=0,
@@ -714,7 +714,7 @@ class HarvestedMouseTestCase(TestCase):
         check_model_view_objects(
             test_cases=self,
             view_list_class=harvested_mouse_list,
-            view_url='/harvestedmouse/list',
+            view_url='/harvestedmouse/force_list',
             expect_num_of_return=2,
             list_to_matched=['handler1', 'handler2'],
             expect_num_of_remain=0,
@@ -726,7 +726,7 @@ class HarvestedMouseTestCase(TestCase):
         check_model_view_objects(
             test_cases=self,
             view_list_class=harvested_mouse_list,
-            view_url='/harvestedmouse/list',
+            view_url='/harvestedmouse/force_list',
             expect_num_of_return=2,
             list_to_matched=[1, 15],
             expect_num_of_remain=0,
@@ -824,7 +824,7 @@ class HarvestedMouseTestCase(TestCase):
         check_model_view_objects(
             test_cases=self,
             view_list_class=harvested_mouse_list,
-            view_url='/harvestedmouse/list',
+            view_url='/harvestedmouse/force_list',
             expect_num_of_return=3,
             list_to_matched=['ABC', 'CBA'],
             expect_num_of_remain=0,
@@ -836,7 +836,7 @@ class HarvestedMouseTestCase(TestCase):
         check_model_view_objects(
             test_cases=self,
             view_list_class=harvested_mouse_list,
-            view_url='/harvestedmouse/list',
+            view_url='/harvestedmouse/force_list',
             expect_num_of_return=3,
             list_to_matched=[1, 16, 15],
             expect_num_of_remain=0,
@@ -891,7 +891,7 @@ class HarvestedMouseTestCase(TestCase):
         check_model_view_objects(
             test_cases=self,
             view_list_class=harvested_mouse_list,
-            view_url='/harvestedmouse/list',
+            view_url='/harvestedmouse/force_list',
             expect_num_of_return=2,
             list_to_matched=['handler1', 'handler2'],
             expect_num_of_remain=0,
@@ -917,7 +917,7 @@ class HarvestedMouseTestCase(TestCase):
         check_model_view_objects(
             test_cases=self,
             view_list_class=harvested_mouse_list,
-            view_url='/harvestedmouse/list',
+            view_url='/harvestedmouse/force_list',
             expect_num_of_return=1,
             list_to_matched=['handler1'],
             expect_num_of_remain=0,
@@ -1004,7 +1004,7 @@ class HarvestedMouseTestCase(TestCase):
         check_model_view_objects(
             test_cases=self,
             view_list_class=harvested_mouse_list,
-            view_url='/harvestedmouse/list',
+            view_url='/harvestedmouse/force_list',
             expect_num_of_return=3,
             list_to_matched=['handler1', 'handler2', 'handler3'],
             expect_num_of_remain=0,
@@ -1035,7 +1035,7 @@ class HarvestedMouseTestCase(TestCase):
         check_model_view_objects(
             test_cases=self,
             view_list_class=harvested_mouse_list,
-            view_url='/harvestedmouse/list',
+            view_url='/harvestedmouse/force_list',
             expect_num_of_return=1,
             list_to_matched=['handler1'],
             expect_num_of_remain=0,

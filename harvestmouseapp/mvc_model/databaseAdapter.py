@@ -4,6 +4,8 @@ from harvestmouseapp.models import HarvestedMouse, HarvestedBasedNumber, Harvest
 from harvestmouseapp.mvc_model.Error import DuplicationMouseError, MouseNotFoundError
 from harvestmouseapp.mvc_model.model import Mouse, MouseList
 
+from django.core.cache import caches, InvalidCacheBackendError
+
 
 class GenericDatabaseAdapter(ABC):
     """
