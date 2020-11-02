@@ -138,7 +138,6 @@ class JsonMouseViewer(GenericMouseViewer):
             return json.dumps(json_obj)
 
 
-
 def _distribute_data_to_mouse(mouse_data):
     """
     This function distributed the mouse object information into the python dictionary object for easier json
