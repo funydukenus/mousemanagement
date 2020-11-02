@@ -128,8 +128,14 @@ class XmlMouseViewer(GenericMouseViewer):
 
 class JsonMouseViewer(GenericMouseViewer):
     def transform(self, mouse_data):
-        data = _convert_mouse_to_dict(mouse_data)
-        return json.dumps(data)
+        if mouse_data is not None:
+            data = _convert_mouse_to_dict(mouse_data)
+            return json.dumps(data)
+        else:
+            json_obj = {
+                'mouse_list': []
+            }
+            return json.dumps(json_obj)
 
 
 def _distribute_data_to_mouse(mouse_data):

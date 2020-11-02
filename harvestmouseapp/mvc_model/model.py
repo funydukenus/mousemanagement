@@ -89,7 +89,7 @@ class MouseList:
         # regarding to the list, if any of the mouse
         # not found in the list, return False to the
         # caller
-        if is_list(mouse_input):
+        if is_mouse_list(mouse_input):
             actual_ref = []
             for m in mouse_input:
                 if self.is_mouse_in_list(physical_id=m.physical_id):
@@ -116,7 +116,7 @@ class MouseList:
         if not check_if_mouse_type(mouse_input):
             return False
 
-        if is_list(mouse_input):
+        if is_mouse_list(mouse_input):
             for m in mouse_input:
                 actual_ref = self.get_mouse_by_id(physical_id=m.physical_id)
                 replace_mouse_with_new_data(m, actual_ref)
@@ -503,6 +503,14 @@ def is_list(input_check):
     parameter is a list
     """
     return isinstance(input_check, list)
+
+
+def is_mouse_list(input_check):
+    """
+    helper function to check if the given
+    parameter is a list
+    """
+    return isinstance(input_check, MouseList)
 
 
 def check_content_type(input_check, type_check_func):

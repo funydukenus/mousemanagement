@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
-    'harvestmouseapp.apps.HarvestmouseappConfig'
+    'harvestmouseapp.apps.HarvestmouseappConfig',
+    'usermanagement.apps.UsermanagementConfig'
 ]
 
 MIDDLEWARE = [
@@ -125,6 +126,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = ['mousemanagement.authbackend.LocalBackends']
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
