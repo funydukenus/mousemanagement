@@ -1,10 +1,7 @@
 from abc import ABC, abstractmethod
-
 from harvestmouseapp.models import HarvestedMouse, HarvestedBasedNumber, HarvestedAdvancedNumber
 from harvestmouseapp.mvc_model.Error import DuplicationMouseError, MouseNotFoundError
 from harvestmouseapp.mvc_model.model import Mouse, MouseList
-
-from django.core.cache import caches, InvalidCacheBackendError
 
 
 class GenericDatabaseAdapter(ABC):
@@ -15,7 +12,6 @@ class GenericDatabaseAdapter(ABC):
     This class is part of the MVC model
     1. Subclass must have the responsibility to convert respective
         information into mouse or moustlist object
-    2. Subclass must maintain the cache of mouse list
     """
 
     def __init__(self):
@@ -30,7 +26,7 @@ class GenericDatabaseAdapter(ABC):
         pass
 
     @abstractmethod
-    def get_all_mouse(self, force=False):
+    def get_all_mouse(self):
         pass
 
     @abstractmethod
@@ -264,7 +260,7 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
 
             self._mouse_list.add_mouse(m)
 
-    def _init_cache_mouse_list_if_possible(self, force=True):
+    def _init_cache_mouse_list_if_possible(self):
         """
         This function helps to initialize the mouse list obj and mark it
         as intialized. So next time it won't intitialized again.

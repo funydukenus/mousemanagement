@@ -35,22 +35,21 @@ def user_create(request):
         password = request.POST['password']
         email = request.POST['email']
 
-        user = User.objects.get(username=username)
-        return Response(status=status.HTTP_302_FOUND)
+        try:
+            User.objects.get(username=username)
+            return Response(status=status.HTTP_302_FOUND)
+        except User.DoesNotExist:
+            # if user is not exist, we are allow to
+            # create the user
+            _interal_create_user(
+                username=username,
+                password=password,
+                email=email
+            )
+            return Response(status=status.HTTP_201_CREATED)
 
     except KeyError:
         return Response(status=status.HTTP_400_BAD_REQUEST)
-
-    except User.DoesNotExist:
-        # if user is not exist, we are allow to
-        # create the user
-        _interal_create_user(
-            username=username,
-            password=password,
-            email=email
-        )
-
-        return Response(status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])

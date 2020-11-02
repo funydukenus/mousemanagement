@@ -65,19 +65,23 @@ class MouseList:
         # overloading of add mouse
 
         # check if the given input bounds with Mouse type
-        if not check_if_mouse_type(mouse_input):
+        # and is the mouse already in the MouseList
+        if not check_if_mouse_type(mouse_input) or \
+                self.is_mouse_in_list(mouse_input=mouse_input, list_check_by_id=True):
             return False
-
-        # Replace with new mouse if found already in the list
-        if self.is_mouse_in_list(mouse_input=mouse_input, list_check_by_id=True):
-            self.remove_mouse(mouse_input)
-
-        if is_list(mouse_input):
-            self._mouse_list.extend(mouse_input)
         else:
-            self._mouse_list.append(mouse_input)
+            # if it's a native list
+            if is_list(mouse_input):
+                self._mouse_list.extend(mouse_input)
+            # if it's a MouseList object
+            elif is_mouse_list(mouse_input):
+                for mouse_from_input in mouse_input:
+                    self._mouse_list.append(mouse_from_input)
+            # if it's a single Mouse object
+            else:
+                self._mouse_list.append(mouse_input)
 
-        return True
+            return True
 
     def remove_mouse(self, mouse_input):
         # check if the given input bounds with Mouse type
@@ -89,11 +93,13 @@ class MouseList:
         # regarding to the list, if any of the mouse
         # not found in the list, return False to the
         # caller
-        if is_mouse_list(mouse_input):
+        # if it's MouseList object
+        if is_list(mouse_input) or is_mouse_list(mouse_input):
             actual_ref = []
-            for m in mouse_input:
-                if self.is_mouse_in_list(physical_id=m.physical_id):
-                    actual_ref.append(self.get_mouse_by_id(physical_id=m.physical_id))
+            for mouse_from_input in mouse_input:
+                # Compared solely on the phsical_id
+                if self.is_mouse_in_list(physical_id=mouse_from_input.physical_id, list_check_by_id=True):
+                    actual_ref.append(self.get_mouse_by_id(physical_id=mouse_from_input.physical_id))
                 else:
                     return False  # one of the mouse not found in the current list
         else:
@@ -104,9 +110,10 @@ class MouseList:
             if actual_ref is None:
                 return False  # return false to indicate the mouse not in the list
 
+        # if it is the list of mouse
         if is_list(actual_ref):
-            for m in actual_ref:
-                self._mouse_list.remove(m)
+            for mouse_from_ref in actual_ref:
+                self._mouse_list.remove(mouse_from_ref)
         else:
             self._mouse_list.remove(actual_ref)
 
@@ -116,13 +123,13 @@ class MouseList:
         if not check_if_mouse_type(mouse_input):
             return False
 
-        if is_mouse_list(mouse_input):
-            for m in mouse_input:
-                actual_ref = self.get_mouse_by_id(physical_id=m.physical_id)
-                replace_mouse_with_new_data(m, actual_ref)
+        if is_list(mouse_input) or is_mouse_list(mouse_input):
+            for mouse_from_input in mouse_input:
+                actual_ref = self.get_mouse_by_id(physical_id=mouse_from_input.physical_id)
+                replace_mouse_with_new_data(new_mouse_input=mouse_from_input, old_mouse_input=actual_ref)
         else:
             actual_ref = self.get_mouse_by_id(physical_id=mouse_input.physical_id)
-            replace_mouse_with_new_data(mouse_input, actual_ref)
+            replace_mouse_with_new_data(new_mouse_input=mouse_input, old_mouse_input=actual_ref)
 
     def get_size(self):
         #  get the size of the current moust list
@@ -137,53 +144,58 @@ class MouseList:
         # if physical_id is given, checks only physical_id
         # id should be independent, no duplication
 
+        if list_check_by_id:
+            def check_method(x, y): return x.physical_id == y.physical_id
+        else:
+            def check_method(x, y): return x == y
+
         if mouse_input is not None:
             # check if the given input bounds with Mouse type
             if not check_if_mouse_type(mouse_input):
                 return False
 
-            found = False
-
-            if is_list(mouse_input):
-                for m in self._mouse_list:
-                    for m_o in mouse_input:
-                        if not list_check_by_id:
-                            if m == m_o:
-                                found = True
-                                break
+            # if given mouse input is a list
+            # checks all overlapped mouse in the given list
+            # any of mouse not matched, should return False
+            if is_list(mouse_input) or is_mouse_list(mouse_input):
+                # Assume the check is failed
+                for mouse_from_input in mouse_input:
+                    presented = False
+                    for mouse_from_db in self._mouse_list:
+                        if check_method(mouse_from_input, mouse_from_db):
+                            presented = True
+                            # continue the next mouse_from_input
+                            break
                         else:
-                            if m.physical_id == m_o.physical_id:
-                                found = True
-                                break
-                        found = False
-                    if not found:
+                            presented = False
+                    # if any of the mouse in the mouse_input not
+                    # found in the moust_List
+                    # return False to client
+                    if not presented:
                         return False
-
+                # if it did not reurn false in above checks
+                # it means all the moust is presented
+                return True
             else:
-                for m in self._mouse_list:
-                    if not list_check_by_id:
-                        if m == mouse_input:
-                            found = True
-                            break
-                    else:
-                        if m.physical_id == mouse_input.physical_id:
-                            found = True
-                            break
-                    found = False
+                # Check through the current moust list from db
+                for mouse_from_db in self._mouse_list:
+                    if check_method(mouse_input, mouse_from_db):
+                        return True
+                # Nothing is found, return False to client
+                return False
         else:
-            found = False
+            # if mouse input no provided
+            # physical id must be provided for the check up
             for m in self._mouse_list:
                 if m.physical_id == physical_id:
-                    found = True
-                    break
-                found = False
-        return found
+                    return True
+        return False
 
     def get_mouse_by_id(self, physical_id):
         if self.is_mouse_in_list(physical_id=physical_id):
-            for m in self._mouse_list:
-                if m.physical_id == physical_id:
-                    return m
+            for mouse_from_db in self._mouse_list:
+                if mouse_from_db.physical_id == physical_id:
+                    return mouse_from_db
         return None
 
     """
