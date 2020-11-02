@@ -7,8 +7,8 @@ from consolemenu.items import *
 import requests
 import pandas as pd
 
-API_ENDPOINT = 'https://mousemanagement.herokuapp.com/'
-# API_ENDPOINT = 'http://127.0.0.1:8000/'
+# API_ENDPOINT = 'https://mousemanagement.herokuapp.com/'
+API_ENDPOINT = 'http://127.0.0.1:8000/'
 HARVESTED_MOUSE_API_ENDPOINT = API_ENDPOINT + 'harvestedmouse/'
 INSERT_API_ENDPOINT = HARVESTED_MOUSE_API_ENDPOINT + 'insert'
 UPDATE_API_ENDPOINT = HARVESTED_MOUSE_API_ENDPOINT + 'update'
@@ -23,6 +23,9 @@ CHANGE_PASSWORD_USER_API_ENDPOINT = USER_API_ENDPOINT + 'change_password'
 CREATE_SUPER_USER_USER_API_ENDPOINT = USER_API_ENDPOINT + 'create_super_user'
 IS_USER_API_ENDPOINT = USER_API_ENDPOINT + 'is_user_empty'
 
+
+HAND_SHAKE_API_ENDPOINT = API_ENDPOINT + 'hc'
+
 menu = ConsoleMenu('Backend Harvested Mouse Management', 'FNY Lab', show_exit_option=False)
 
 
@@ -32,6 +35,8 @@ def gui_start():
 
     # MenuItem is the base class for all items, it doesn't do anything when selected
     menu_item = MenuItem('Menu Item')
+
+    function_handshake = FunctionItem("HandShake", hand_shake)
 
     # A FunctionItem runs a Python function when selected
     function_item_list = FunctionItem("Output all harvested mouse list", list_all_mouse_on_screen)
@@ -52,6 +57,7 @@ def gui_start():
 
     # Once we're done creating them, we just add the items to the menu
     menu.append_item(menu_item)
+    menu.append_item(function_handshake)
     menu.append_item(function_item_list)
     menu.append_item(function_item_insert)
     menu.append_item(function_item_delete_all)
@@ -62,6 +68,14 @@ def gui_start():
     menu.append_item(function_exit)
     # Finally, we call show to show the menu and allow the user to interact
     menu.show()
+
+
+def hand_shake():
+    r = requests.get(url=HAND_SHAKE_API_ENDPOINT)
+    if r.status_code == 200:
+        print('OK')
+    else:
+        print('FAIL')
 
 
 def create_user():

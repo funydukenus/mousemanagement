@@ -133,3 +133,8 @@ def _interal_create_user(username, password, email, is_super_user=False):
     user.save()
 
     return user
+
+
+@api_view(['GET'])
+def hand_checking(request):
+    return Response(status=status.HTTP_200_OK)
