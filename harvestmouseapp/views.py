@@ -221,6 +221,8 @@ def harvested_import_mouse(request):
     #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     form = UploadFileForm(request.POST, request.FILES)
+    if form.is_valid():
+        print(request.FILES['file'].name)
     if form.is_valid() and request.FILES['file'].name.endswith('.csv'):
         filename = save_uploaded_file(request.FILES['file'])
         return insert_external_data(filename)
@@ -366,8 +368,11 @@ def insert_external_data(filename):
     result of the processing file
     """
     mouse_list = convert_csv_to_json_arr(filename)
+
+    # convert to json format
+    json_viewer = JsonMouseViewer()
     try:
-        mouse_controller_g.create_mouse(mouse_list)
+        mouse_controller_g.create_mouse(json_viewer.transform(mouse_list))
         return Response(status=status.HTTP_200_OK)
     except:
         return Response(status=status.HTTP_400_BAD_REQUEST)
