@@ -13,7 +13,6 @@ def user_login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            request.session['username'] = username
             return Response(status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
@@ -137,3 +136,31 @@ def _interal_create_user(username, password, email, is_super_user=False):
 @api_view(['GET'])
 def hand_checking(request):
     return Response(status=status.HTTP_200_OK)
+
+
+def _check_if_user_is_login(username):
+    """
+    Check if the user has logged in
+    """
+    try:
+        user = User.objects.get(username=username)
+        if user.is_active and user.is_authenticated and user.is_staff:
+            return True
+        else:
+            return False
+    except User.DoesNotExist:
+        return False
+    except KeyError:
+        return False
+
+
+@api_view(['POST'])
+def is_login(request):
+    try:
+        username = request.POST['username']
+        if _check_if_user_is_login(username):
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+    except KeyError:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
