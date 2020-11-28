@@ -201,14 +201,11 @@ def get_random_alphanumeric_string(letters_count, digits_count):
 
 
 def verify_super_user_email(email, password):
-    try:
-        session = smtplib.SMTP('smtp.gmail.com', 587)  # use gmail with port
-        session.starttls()  # enable security
-        session.login(email, password)  # login with mail_id and password
-        session.quit()
-        return True
-    except:
-        return False
+    session = smtplib.SMTP('smtp.gmail.com', 587)  # use gmail with port
+    session.starttls()  # enable security
+    session.login(email, password)  # login with mail_id and password
+    session.quit()
+    return True
 
 
 def low_level_send_email(sender_email, password, receiver_email, title, content):
