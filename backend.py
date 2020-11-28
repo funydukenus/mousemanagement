@@ -7,8 +7,8 @@ from consolemenu.items import *
 import requests
 import pandas as pd
 
-API_ENDPOINT = 'https://mousemanagement.herokuapp.com/'
-# API_ENDPOINT = 'http://127.0.0.1:8000/'
+# API_ENDPOINT = 'https://mousemanagement.herokuapp.com/'
+API_ENDPOINT = 'http://127.0.0.1:8000/'
 HARVESTED_MOUSE_API_ENDPOINT = API_ENDPOINT + 'harvestedmouse/'
 INSERT_API_ENDPOINT = HARVESTED_MOUSE_API_ENDPOINT + 'insert'
 UPDATE_API_ENDPOINT = HARVESTED_MOUSE_API_ENDPOINT + 'update'
@@ -22,7 +22,8 @@ LOGOUT_USER_API_ENDPOINT = USER_API_ENDPOINT + 'logout'
 CHANGE_PASSWORD_USER_API_ENDPOINT = USER_API_ENDPOINT + 'change_password'
 CREATE_SUPER_USER_USER_API_ENDPOINT = USER_API_ENDPOINT + 'create_super_user'
 IS_USER_API_ENDPOINT = USER_API_ENDPOINT + 'is_user_empty'
-
+SEND_EMAIL_API_ENDPOINT = USER_API_ENDPOINT + 'sendemail'
+DELETE_ALL_USER_API_ENDPOINT = USER_API_ENDPOINT + 'deletealluser'
 
 HAND_SHAKE_API_ENDPOINT = API_ENDPOINT + 'hc'
 
@@ -53,6 +54,10 @@ def gui_start():
 
     function_user_logout = FunctionItem("User loggout", user_logout)
 
+    function_user_delete_all = FunctionItem("Delete All User", user_delete_all)
+
+    function_send_email = FunctionItem("Send Email", send_email)
+
     function_exit = FunctionItem("Exit", exit_console)
 
     # Once we're done creating them, we just add the items to the menu
@@ -65,6 +70,8 @@ def gui_start():
     menu.append_item(function_super_user_create)
     menu.append_item(function_user_login)
     menu.append_item(function_user_logout)
+    menu.append_item(function_user_delete_all)
+    menu.append_item(function_send_email)
     menu.append_item(function_exit)
     # Finally, we call show to show the menu and allow the user to interact
     menu.show()
@@ -78,14 +85,40 @@ def hand_shake():
         print('FAIL')
 
 
+def user_delete_all():
+    r = requests.get(url=DELETE_ALL_USER_API_ENDPOINT)
+    if r.status_code == 200:
+        print('OK')
+    else:
+        print('FAIL')
+
+
+def send_email():
+    title = input("Enter title: ")
+    content = input("Enter Content: ")
+    password = input("Enter Super User password: ")
+
+    post_data = {
+        'title': title,
+        'content': content,
+        'password': password
+    }
+
+    r = requests.post(url=SEND_EMAIL_API_ENDPOINT, data=post_data)
+    if r.status_code == 200:
+        print('OK')
+    else:
+        print('FAIL')
+
+
 def create_user():
     username = input("Enter your username: ")
-    password = input("Enter your password: ")
+    superuser_password = input("Enter superuser_password: ")
     email = input("Enter your email: ")
 
     post_data = {
         'username': username,
-        'password': password,
+        'superuser_password': superuser_password,
         'email': email
     }
 
