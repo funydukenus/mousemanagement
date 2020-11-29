@@ -22,7 +22,10 @@ def user_login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return Response(status=status.HTTP_200_OK)
+            key_str = ""
+            for k in request.session.keys():
+                key_str += " " + k
+            return Response(data=key_str, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
     except KeyError:
@@ -171,7 +174,7 @@ def _check_if_user_is_login(username):
 def is_login(request):
     try:
         s = request.session
-        user_id = request.session['_auth_user_i']
+        user_id = request.session['_auth_user_id']
         user = User.objects.get(id=user_id)
         if user.is_authenticated:
             return Response(data="authen", status=status.HTTP_200_OK)
