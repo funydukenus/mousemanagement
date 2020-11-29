@@ -1,0 +1,66 @@
+<div class="table-container">
+   <table class="table-content" #table mat-table multiTemplateDataRows [dataSource]="dataSource" cdkDropList
+      cdkDropListOrientation="horizontal" (cdkDropListDropped)="drop($event)" matSort>
+
+      <ng-container [matColumnDef]="column.key" *ngFor="let column of ( displayedColumns | tableheaderconverter )">
+         <div *ngIf="column.key !== 'position'">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header cdkDrag> {{column.display}} </th>
+            <td mat-cell *matCellDef="let element">
+               <span>{{element[column.key]}}</span>
+            </td>
+         </div>
+         <div *ngIf="column.key === 'position'">
+            <th mat-header-cell *matHeaderCellDef>
+               <mat-checkbox (change)="$event ? masterToggle() : null"
+                  [checked]="selection.hasValue() && isAllSelected()"
+                  [indeterminate]="selection.hasValue() && !isAllSelected()">
+               </mat-checkbox>
+            </th>
+            <td mat-cell *matCellDef="let row">
+               <mat-checkbox (click)="$event.stopPropagation()" (change)="selectionEventChange($event, row)"
+                  [checked]="selection.isSelected(row)">
+               </mat-checkbox>
+            </td>
+         </div>
+      </ng-container>
+
+      <!-- Detail information when user clicked the rows -->
+      <!--
+         This is the expanded section of the rows. When the user clicked the row,
+         expandedElement declared in the ts file will be assigned to the
+         element which was distributed from the datasource at the beginning
+         of the program.
+         Then, in this container, only the assigned element will be assigned
+         expanded to the detailExpand.
+      -->
+      <ng-container matColumnDef="expandedDetail">
+         <td mat-cell *matCellDef="let element" [attr.colspan]="displayedColumns.length">
+            <div class="element-detail" [@detailExpand]="element == expandedElement ? 'expanded' : 'collapsed'">
+               <div>
+                  <h4><strong>Comment</strong></h4>
+                  <div class="element-comment">
+                     <textarea
+                           cols="165"
+                           rows="5"
+                           [(ngModel)]="element.comment"
+                           (input)="commentAreaChanged()">{{element.comment}}</textarea>
+                  </div>
+               </div>
+               <div class="btn-group functional-button-group right" role="group">
+                  <button [disabled]="submitDisabled" *ngIf="IsTextAreaModifed" type="button" class="btn medium btn-success functional-button" (click)="confirmOnClick()">Confirm Comment</button>
+                  <button [disabled]="submitDisabled" type="button" class="btn medium btn-primary functional-button" (click)="editOnClick()">Edit More</button>
+                  <button [disabled]="submitDisabled" type="button" class="btn medium btn-danger functional-button" (click)="deleteOnClick()">Delete</button>
+                  <button type="button" class="btn medium btn-basic functional-button" (click)="closeButtonClick()">Close</button>
+               </div>
+            </div>
+         </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr mat-row *matRowDef="let element; columns: displayedColumns;" class="element-row"
+         [class.element-expanded-row]="expandedElement === element" (dblclick)="onRowClicked(element)">
+      <tr mat-row *matRowDef="let row; columns: ['expandedDetail'];" class="element-detail-row"></tr>
+
+   </table>
+   <mat-paginator [pageSize]="10" [pageSizeOptions]="[5, 10, 25, 100]"></mat-paginator>
+</div>

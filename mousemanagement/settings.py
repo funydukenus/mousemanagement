@@ -59,10 +59,8 @@ MIDDLEWARE = [
 
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:4200',                        # For local testing
-    'https://mousemanagementsite.herokuapp.com'     # For production
-]
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = 'None'
 
 CORS_ALLOW_HEADERS = [
     'Access-Control-Allow-Origin',
@@ -93,9 +91,6 @@ ROOT_URLCONF = 'mousemanagement.urls'
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
-SESSION_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SECURE = True
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -125,18 +120,18 @@ WSGI_APPLICATION = 'mousemanagement.wsgi.application'
 #     }
 # }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': 'mousemanagement',
-#         'USER': 'postgres',
-#         'PASSWORD': '33360411',
-#         'HOST': '127.0.0.1',
-#         'PORT': '5432',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'mousemanagement',
+        'USER': 'postgres',
+        'PASSWORD': '33360411',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
+    }
+}
 
-DATABASES = {'default': dj_database_url.config(conn_max_age=600, ssl_require=True)}
+# DATABASES = {'default': dj_database_url.config(conn_max_age=600, ssl_require=True)}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators

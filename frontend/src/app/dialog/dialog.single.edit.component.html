@@ -1,0 +1,258 @@
+<h2 mat-dialog-title>Editing mouse</h2>
+<mat-dialog-content class="diag-content">
+  <mat-accordion [@.disabled]="disableAnimation">
+
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Basic information</mat-panel-title>
+        <mat-panel-description>Physical ID & Gender & Handler</mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <mat-grid-list cols="3" rowHeight="6rem">
+        <mat-grid-tile colspan="1">
+          <mat-form-field appearance="outline">
+            <mat-label>Physical ID</mat-label>
+            <input matInput required value="harvestedMouse.physical_id" [(ngModel)]="harvestedMouse.physical_id" [disabled]="true">
+          </mat-form-field>
+        </mat-grid-tile>
+        <mat-grid-tile colspan="1">
+          <mat-form-field appearance="outline">
+            <mat-label>Gender</mat-label>
+            <mat-select [(value)]="harvestedMouse.gender">
+              <mat-option value="M">Male</mat-option>
+              <mat-option value="F">Female</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </mat-grid-tile>
+        <mat-grid-tile colspan="1">
+          <mat-form-field appearance="outline">
+            <mat-label>Handled by</mat-label>
+            <input matInput required [matAutocomplete]="autohandler" value="harvestedMouse.handler"
+            [(ngModel)]="harvestedMouse.handler" [formControl]="getDataOptionByName('Handler').control">
+            <mat-autocomplete autoActiveFirstOption #autohandler="matAutocomplete">
+              <mat-option *ngFor="let option of getDataOptionByName('Handler').filteredOptions | async" [value]="option">
+                {{option}}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+        </mat-grid-tile>
+      </mat-grid-list>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Gene Information</mat-panel-title>
+        <mat-panel-description>MouseLine & GenoType & PhenoType</mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <mat-grid-list cols="2" rows="2" rowHeight="6rem">
+        <mat-grid-tile colspan="1">
+          <mat-form-field class="mouselineInput" appearance="outline">
+            <mat-label>MouseLine</mat-label>
+            <input matInput required [matAutocomplete]="automouseline" value="harvestedMouse.mouseline"
+            [(ngModel)]="harvestedMouse.mouseline" [formControl]="getDataOptionByName('MouseLine').control">
+            <mat-autocomplete autoActiveFirstOption #automouseline="matAutocomplete">
+              <mat-option *ngFor="let option of getDataOptionByName('MouseLine').filteredOptions | async" [value]="option">
+                {{option}}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+        </mat-grid-tile>
+        <mat-grid-tile colspan="1">
+          <mat-form-field class="genotypeInput" appearance="outline">
+            <mat-label>GenoType</mat-label>
+            <input matInput required [matAutocomplete]="autogenotype" value="harvestedMouse.genotype"
+            [(ngModel)]="harvestedMouse.genotype" [formControl]="getDataOptionByName('GenoType').control">
+            <mat-autocomplete autoActiveFirstOption #autogenotype="matAutocomplete">
+              <mat-option *ngFor="let option of getDataOptionByName('GenoType').filteredOptions | async" [value]="option">
+                {{option}}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+        </mat-grid-tile>
+        <mat-grid-tile colspan="1">
+          <mat-form-field appearance="outline">
+            <mat-label>PhenoType</mat-label>
+            <input matInput required [matAutocomplete]="autophenotype" value="harvestedMouse.phenotype"
+            [(ngModel)]="harvestedMouse.phenotype" [formControl]="getDataOptionByName('PhenoType').control">
+            <mat-autocomplete autoActiveFirstOption #autophenotype="matAutocomplete">
+              <mat-option *ngFor="let option of getDataOptionByName('PhenoType').filteredOptions | async" [value]="option">
+                {{option}}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+        </mat-grid-tile>
+        <mat-grid-tile colspan="1">
+          <mat-form-field appearance="outline">
+            <mat-label>Confirmation of GenoType</mat-label>
+            <input matInput required value="harvestedMouse.cog" [(ngModel)]="harvestedMouse.cog">
+          </mat-form-field>
+        </mat-grid-tile>
+      </mat-grid-list>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Date Information</mat-panel-title>
+        <mat-panel-description>BirthDate & EndDate</mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <mat-grid-list cols="2" rows="1" rowHeight="6rem">
+        <mat-grid-tile colspan="1">
+          <mat-form-field appearance="outline">
+            <mat-label>BirthDate</mat-label>
+            <input matInput [matDatepicker]="birthDatePicker" [(ngModel)]="this.birth_date">
+            <mat-datepicker-toggle matSuffix [for]="birthDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #birthDatePicker></mat-datepicker>
+          </mat-form-field>
+        </mat-grid-tile>
+        <mat-grid-tile colspan="1">
+          <mat-form-field appearance="outline">
+            <mat-label>EndDate</mat-label>
+            <input matInput [min]="this.birth_date" [matDatepicker]="endDatePicker" [(ngModel)]="this.end_date">
+            <mat-datepicker-toggle matSuffix [for]="endDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #endDatePicker></mat-datepicker>
+          </mat-form-field>
+        </mat-grid-tile>
+      </mat-grid-list>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Project Information</mat-panel-title>
+        <mat-panel-description>Project Title & Experiment & Comment</mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <mat-grid-list cols="1" rows="4" rowHeight="6rem">
+        <mat-grid-tile colspan="1" rowspan="1">
+          <mat-form-field class="projectInput" appearance="outline" >
+            <mat-label>Project Title</mat-label>
+            <input matInput required [matAutocomplete]="autoprojectitle" value="harvestedMouse.project_title"
+            [(ngModel)]="harvestedMouse.project_title" [formControl]="getDataOptionByName('ProjectTitle').control">
+            <mat-autocomplete autoActiveFirstOption #autoprojectitle="matAutocomplete">
+              <mat-option *ngFor="let option of getDataOptionByName('ProjectTitle').filteredOptions | async" [value]="option">
+                {{option}}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+        </mat-grid-tile>
+        <mat-grid-tile colspan="1" rowspan="1">
+          <mat-form-field class="experimentInput" appearance="outline">
+            <mat-label>Experiment</mat-label>
+            <input matInput required [matAutocomplete]="autoexperiment" value="harvestedMouse.experiment"
+            [(ngModel)]="harvestedMouse.experiment" [formControl]="getDataOptionByName('Experiement').control">
+            <mat-autocomplete autoActiveFirstOption #autoexperiment="matAutocomplete">
+              <mat-option *ngFor="let option of getDataOptionByName('Experiement').filteredOptions | async" [value]="option">
+                {{option}}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+        </mat-grid-tile>
+        <mat-grid-tile colspan="1" rowspan="2">
+          <mat-form-field class="commentInput" appearance="outline">
+            <mat-label>Comment</mat-label>
+            <textarea matInput rows="7" placeholder="Leave a comment" [(ngModel)]="harvestedMouse.comment"></textarea>
+          </mat-form-field>
+        </mat-grid-tile>
+      </mat-grid-list>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Harvesting Record</mat-panel-title>
+        <mat-panel-description>PFA Record & Freeze Record</mat-panel-description>
+      </mat-expansion-panel-header>
+      <div class="disection-record">
+        <mat-grid-list cols="1" rows="1" rowHeight="2rem">
+          <mat-grid-tile colspan="1" rowspan="1" rowHeight="2rem">
+            <h5 class="section-header">PFA Record</h5>
+          </mat-grid-tile>
+        </mat-grid-list>
+        <mat-grid-list cols="2" rows="4" rowHeight="6rem">
+          <mat-grid-tile colspan="1" rowspan="1">
+            <mat-form-field appearance="outline">
+              <mat-label>Liver</mat-label>
+              <input type="number" matInput required value="harvestedMouse.pfa_record.liver"
+              [(ngModel)]="harvestedMouse.pfa_record.liver">
+            </mat-form-field>
+          </mat-grid-tile>
+          <mat-grid-tile colspan="1" rowspan="1">
+            <mat-form-field appearance="outline">
+              <mat-label>Liver Tumor</mat-label>
+              <input type="number" matInput required value="harvestedMouse.pfa_record.liver_tumor"
+              [(ngModel)]="harvestedMouse.pfa_record.liver_tumor">
+            </mat-form-field>
+          </mat-grid-tile>
+          <mat-grid-tile colspan="1" rowspan="1">
+            <mat-form-field appearance="outline">
+              <mat-label>Small Intenstine</mat-label>
+              <input type="number" matInput required value="harvestedMouse.pfa_record.small_intenstine"
+              [(ngModel)]="harvestedMouse.pfa_record.small_intenstine">
+            </mat-form-field>
+          </mat-grid-tile>
+          <mat-grid-tile colspan="1" rowspan="1">
+            <mat-form-field appearance="outline">
+              <mat-label>Small Intenstine Tumor</mat-label>
+              <input type="number" matInput required value="harvestedMouse.pfa_record.small_intenstine_tumor"
+              [(ngModel)]="harvestedMouse.pfa_record.small_intenstine_tumor  ">
+            </mat-form-field>
+          </mat-grid-tile>
+          <mat-grid-tile colspan="1" rowspan="1">
+            <mat-form-field appearance="outline">
+              <mat-label>Skin</mat-label>
+              <input type="number" matInput required value="harvestedMouse.pfa_record.skin"
+              [(ngModel)]="harvestedMouse.pfa_record.skin">
+            </mat-form-field>
+          </mat-grid-tile>
+          <mat-grid-tile colspan="1" rowspan="1">
+            <mat-form-field appearance="outline">
+              <mat-label>Skin Tumor</mat-label>
+              <input type="number" matInput required value="harvestedMouse.pfa_record.skin_tumor"
+              [(ngModel)]="harvestedMouse.pfa_record.skin_tumor">
+            </mat-form-field>
+          </mat-grid-tile>
+          <mat-grid-tile colspan="2" rowspan="2">
+            <mat-form-field class="commentInput" appearance="outline">
+              <mat-label>Others</mat-label>
+              <textarea matInput rows="7" [(ngModel)]="harvestedMouse.pfa_record.others"></textarea>
+            </mat-form-field>
+          </mat-grid-tile>
+        </mat-grid-list>
+      </div>
+      <div class="disection-record">
+        <mat-grid-list cols="1" rows="1" rowHeight="2rem">
+          <mat-grid-tile colspan="1" rowspan="1" rowHeight="2rem">
+            <h5 class="section-header">Freeze Record</h5>
+          </mat-grid-tile>
+        </mat-grid-list>
+        <mat-grid-list cols="2" rows="6" rowHeight="6rem">
+          <mat-grid-tile colspan="1" rowspan="1">
+            <mat-form-field appearance="outline">
+              <mat-label>Liver</mat-label>
+              <input type="number" matInput required value="harvestedMouse.freeze_record.liver"
+              [(ngModel)]="harvestedMouse.freeze_record.liver">
+            </mat-form-field>
+          </mat-grid-tile>
+          <mat-grid-tile colspan="1" rowspan="1">
+            <mat-form-field appearance="outline">
+              <mat-label>Liver Tumor</mat-label>
+              <input type="number" matInput required value="harvestedMouse.freeze_record.liver_tumor"
+              [(ngModel)]="harvestedMouse.freeze_record.liver_tumor">
+            </mat-form-field>
+          </mat-grid-tile>
+          <mat-grid-tile colspan="2" rowspan="2">
+            <mat-form-field class="commentInput" appearance="outline">
+              <mat-label>Others</mat-label>
+              <textarea matInput rows="7" [(ngModel)]="harvestedMouse.freeze_record.others"></textarea>
+            </mat-form-field>
+          </mat-grid-tile>
+        </mat-grid-list>
+      </div>
+    </mat-expansion-panel>
+  </mat-accordion>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <div class="btn-group functional-button-group" role="group">
+    <button type="button" class="btn btn-primary" [mat-dialog-close]="consolidateData(true)">Confirm</button>
+    <button type="button" class="btn btn-danger" (click)="CloseConfirm()">Cancel</button>
+  </div>
+</mat-dialog-actions>

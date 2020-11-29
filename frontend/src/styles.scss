@@ -1,0 +1,56 @@
+@import "shared/form.scss";
+@import "shared/button.scss";
+@import "shared/global.scss";
+
+/* You can add global styles to this file, and also import other style files */
+body {
+   margin: 0;
+   overflow: hidden;
+   font-family: Roboto, "Helvetica Neue", sans-serif;
+   background-image:url("./assets/images/mainpage_background.jpg");
+   -webkit-user-select: none;
+   -moz-user-select: -moz-none;
+    -ms-user-select: none;
+        user-select: none;
+}
+
+html {
+  font-size: 14px;
+}
+
+.blue-snackbar {
+   background: #2196F3;
+   color: white;
+}
+
+.green-snackbar{
+   background: rgb(32, 241, 126);
+   color: black;
+   font-weight: bold;
+}
+
+.red-snackbar{
+   background: rgb(241, 39, 32);
+   color: white;
+   font-weight: bold;
+}
+
+.cdk-drag-preview {
+   box-sizing: border-box;
+   border-radius: 4px;
+   box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+               0 8px 10px 1px rgba(0, 0, 0, 0.14),
+               0 3px 14px 2px rgba(0, 0, 0, 0.12);
+ }
+
+ .cdk-drag-placeholder {
+   opacity: 0;
+ }
+
+ .cdk-drag-animating {
+   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+ }
+
+ .cdk-drop-list-dragging .mat-row:not(.cdk-drag-placeholder) {
+   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+ }

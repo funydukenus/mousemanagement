@@ -1,0 +1,13 @@
+<img class="login-logo-img" src="../../assets/images/dukenus-logo.png" alt="logo">
+<div class="login-block">
+  <h1 class="login-title">Login</h1>
+  <mat-progress-bar *ngIf="IsLoading" mode="query"></mat-progress-bar>
+  <form [formGroup]="form" #userlogin="ngForm" (ngSubmit)="OnClickSubmit(userlogin.value)">
+    <input type="text" placeholder="Username" name="username" id="username" formControlName="username" required>
+    <input type="password" placeholder="Password" name="password" id="password" formControlName="password" required>
+    <p [ngClass]="{'show-error-msg': !form.valid && hasUserClickedSubmit && AbnormalDetected}" class="error-msg"
+      #passwordwarning>{{WarningTxt}}</p>
+    <input class="submit-button" #submitButton [ngClass]="{'has-error': !form.valid && hasUserClickedSubmit}"
+      type="submit" [value]="submitButtonTxt" [disabled]="!form.valid && hasUserClickedSubmit">
+  </form>
+</div>

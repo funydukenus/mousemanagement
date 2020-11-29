@@ -1,0 +1,32 @@
+<mat-sidenav-container *ngIf="ShowSideBar()">
+  <mat-sidenav #sidenav mode="over">
+    <div class="top">
+      <img src='/assets/images/dukenus-logo.png'/>
+    </div>
+    <mat-list>
+      <a mat-list-item href='/harvest-mouse'>
+        Havest Mouse
+      </a>
+      <a mat-list-item href='/upload-csv'>
+        Upload CSV File
+      </a>
+      <a mat-list-item class="logout" (click)="Logout()">
+        Log Out
+      </a>
+     </mat-list>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <mat-toolbar>
+      <a class="side-bar-opener" (click)="sidenav.toggle()">
+        <mat-icon class="material-icons">menu</mat-icon>
+      </a>
+      <span>FNY Lab</span>
+    </mat-toolbar>
+    <div *ngIf="ValidationDone" class="root-container">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
+<div *ngIf="!ShowSideBar()" class="root-container">
+  <router-outlet></router-outlet>
+</div>

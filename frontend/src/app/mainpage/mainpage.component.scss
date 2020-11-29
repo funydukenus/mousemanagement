@@ -1,0 +1,37 @@
+html, body {
+  height: 100%;
+}
+
+.view-block-title{
+   margin: 0;  // Clear the margin effect from other component
+}
+
+.view-block{
+   width: 250px;
+   height: 150px;
+   background-color: lightblue;
+   text-align: center;
+   border-radius: 5px;
+   padding: 10px;
+   box-sizing: content-box;
+   cursor: pointer;
+   margin-right: 4%;
+   float: left;
+}
+
+.view-block:hover{
+   background-color: rgb(84, 148, 170);
+}
+
+.view-block-descrption{
+   margin: 10px;
+   text-align: left;
+   background-color: lightcyan;
+   opacity: 0.7;
+   border-radius: 5px;
+   padding: 3px;
+}
+
+.view-block-icon{
+   width: 100%;
+}

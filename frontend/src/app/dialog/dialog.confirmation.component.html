@@ -1,0 +1,14 @@
+<h2 mat-dialog-title>Confirmation of deleting mouse</h2>
+<mat-dialog-content class="diag-content">
+   <p>The following mouse will be deleted</p>
+   <div *ngFor="let mouse of data.harvestedMouse">
+      <p>Physical ID: <strong>{{mouse.physicalId}}</strong>
+         Handled by: <strong>{{mouse.handler}}</strong></p>
+   </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+   <div class="btn-group functional-button-group" role="group">
+      <button type="button" class="btn btn-primary" [mat-dialog-close]="true">Confirm</button>
+      <button type="button" class="btn btn-danger" [mat-dialog-close]="false">Cancel</button>
+   </div>
+</mat-dialog-actions>

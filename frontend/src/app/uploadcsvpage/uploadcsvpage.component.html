@@ -1,0 +1,11 @@
+<div class="jumbotron">
+  <h1>Upload CSV</h1>
+  <p>Upload an CSV file. Click <a href='assets/template.csv'>here</a> to download an example.</p>
+
+  <input type="file" accept="" #fileInput style="display:none;" (change)="fileInputChange($event)" accept=".csv">
+  <button type="button" class="btn btn-info functional-button" (click)="uploadButtonClick()">
+    Upload CSV File
+  </button>
+</div>
+
+<mat-progress-bar *ngIf="loaded" mode="indeterminate"></mat-progress-bar>

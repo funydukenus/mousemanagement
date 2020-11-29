@@ -1,0 +1,12 @@
+<div *ngIf="this.IsValid" class="login-block">
+   <h1 class="login-title">Update your new password</h1>
+   <mat-progress-bar *ngIf="IsLoading" mode="query"></mat-progress-bar>
+   <form [formGroup]="form" #userlogin="ngForm" (ngSubmit)="OnClickSubmit(userlogin.value)">
+     <input type="password" placeholder="New Password" name="password" id="password" formControlName="password" required
+       ngModel>
+     <p [ngClass]="{'show-error-msg': !form.valid && hasUserClickedSubmit && AbnormalDetected}" class="error-msg"
+       #passwordwarning>{{WarningTxt}}</p>
+     <input class="submit-button" #submitButton [ngClass]="{'has-error': !form.valid && hasUserClickedSubmit}"
+       type="submit" [value]="submitButtonTxt" [disabled]="!form.valid && hasUserClickedSubmit">
+   </form>
+ </div>

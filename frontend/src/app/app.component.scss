@@ -1,0 +1,21 @@
+@import "../shared/toolbar.scss";
+@import "../shared/sidenav.scss";
+
+.mat-drawer-container {
+  background-color: transparent;
+  color: black;
+  height: 100%;
+}
+
+.root-container{
+   height: 100vh;
+}
+
+.logout:hover{
+   cursor: pointer;
+   text-decoration: underline;
+}
+
+.side-bar-opener:hover{
+   cursor: pointer;
+}

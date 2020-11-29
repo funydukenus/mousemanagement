@@ -1,0 +1,11 @@
+<h2 mat-dialog-title>Warning</h2>
+<mat-dialog-content class="diag-content">
+   <p>Unsaved text will lost.</p>
+   <p>Confirm to leave, Cancel to stay</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+   <div class="btn-group functional-button-group" role="group">
+      <button type="button" class="btn btn-primary" [mat-dialog-close]="true">Confirm</button>
+      <button type="button" class="btn btn-danger" [mat-dialog-close]="false">Cancel</button>
+   </div>
+</mat-dialog-actions>
