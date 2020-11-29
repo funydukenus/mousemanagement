@@ -242,7 +242,7 @@ def send_invitation_to_user(super_user_password, generated_password, receiver_em
     title = "Hello from Mouse Management Committee"
     content = 'Your user has been created by Admin\n'\
               'Please Click the following link to update the password:\n' \
-              'http://localhost:4200/updatepwdnewuser?secret_key=' + generated_password + \
+              'https://mousemanagementsite.herokuapp.com/updatepwdnewuser?secret_key=' + generated_password + \
               '&username=' + username
 
     res = send_email(title, content, super_user_password, receiver_email)
