@@ -56,6 +56,12 @@ MIDDLEWARE = [
 
 # CORS_ORIGIN_ALLOW_ALL = True
 
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:4200',
+    'https://mousemanagementsite.herokuapp.com/'
+] # If this is used, then not need to use `CORS_ORIGIN_ALLOW_ALL = True`
+
 CORS_ALLOW_HEADERS = [
     'Access-Control-Allow-Origin',
     'accept',
@@ -113,18 +119,18 @@ WSGI_APPLICATION = 'mousemanagement.wsgi.application'
 #     }
 # }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': 'mousemanagement',
-#         'USER': 'postgres',
-#         'PASSWORD': '33360411',
-#         'HOST': '127.0.0.1',
-#         'PORT': '5432',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'mousemanagement',
+        'USER': 'postgres',
+        'PASSWORD': '33360411',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
+    }
+}
 
-DATABASES = {'default': dj_database_url.config(conn_max_age=600, ssl_require=True)}
+# DATABASES = {'default': dj_database_url.config(conn_max_age=600, ssl_require=True)}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators

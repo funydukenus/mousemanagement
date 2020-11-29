@@ -172,6 +172,7 @@ def _check_if_user_is_login(username):
 @api_view(['POST'])
 def is_login(request):
     try:
+        s = request.session
         user_id = request.session['_auth_user_id']
         user = User.objects.get(id=user_id)
         if user.is_authenticated:
