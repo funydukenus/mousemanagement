@@ -93,10 +93,7 @@ ROOT_URLCONF = 'mousemanagement.urls'
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SAMESITE = 'lax'
-SESSION_COOKIE_SAMESITE = 'lax'
+SESSION_COOKIE_DOMAIN = 'herokuapp.com'
 
 TEMPLATES = [
     {
