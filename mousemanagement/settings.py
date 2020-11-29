@@ -28,7 +28,7 @@ SECRET_KEY = 'wtzs$+6_@w(u*+ol_zw^046#@r2e*fj!-1lu(**=whh#05xih2'
 DEBUG = True
 
 # ALLOWED_HOSTS = ['mousemanagement.herokuapp.com', '127.0.0.1', '192.168.50.194']
-ALLOWED_HOSTS = ['localhost', 'mousemanagement.herokuapp.com', 'mousemanagementsite.herokuapp.com']
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -94,6 +94,7 @@ ROOT_URLCONF = 'mousemanagement.urls'
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
 SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
 
 TEMPLATES = [
     {
@@ -124,18 +125,18 @@ WSGI_APPLICATION = 'mousemanagement.wsgi.application'
 #     }
 # }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': 'mousemanagement',
-#         'USER': 'postgres',
-#         'PASSWORD': '33360411',
-#         'HOST': '127.0.0.1',
-#         'PORT': '5432',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'mousemanagement',
+        'USER': 'postgres',
+        'PASSWORD': '33360411',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
+    }
+}
 
-DATABASES = {'default': dj_database_url.config(conn_max_age=600, ssl_require=True)}
+# DATABASES = {'default': dj_database_url.config(conn_max_age=600, ssl_require=True)}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
