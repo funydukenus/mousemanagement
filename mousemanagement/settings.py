@@ -98,7 +98,7 @@ REST_FRAMEWORK = {
 
 ROOT_URLCONF = 'mousemanagement.urls'
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.file'
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 
 TEMPLATES = [
     {
