@@ -201,6 +201,10 @@ def get_random_alphanumeric_string(letters_count, digits_count):
 
 
 def verify_super_user_email(email, password):
+    # if email failed try the below 2,
+    # 1. You need to allow less secure apps, you can do it by click below link
+    #    https://www.google.com/settings/security/lesssecureapps
+    # 2. https://accounts.google.com/DisplayUnlockCaptcha
     session = smtplib.SMTP('smtp.gmail.com', 587)  # use gmail with port
     session.starttls()  # enable security
     session.login(email, password)  # login with mail_id and password
