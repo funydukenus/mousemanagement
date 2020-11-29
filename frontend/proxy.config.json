@@ -1,7 +1,0 @@
-{
-   "/api/*": {
-      "target": "https://mousemanagement.herokuapp.com/",
-      "secure": true,
-      "loglevel": "debug"
-   }
-}
