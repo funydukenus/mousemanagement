@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.http import HttpResponse
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -11,6 +12,8 @@ import string
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+from usermanagement.UserViewer import JsonUserViewer
 
 
 @api_view(['POST'])
@@ -120,7 +123,8 @@ def create_super_user(request):
                 username=username,
                 password=password,
                 email=email,
-                is_super_user=True
+                is_super_user=True,
+                is_active=True
             )
             return Response(status=status.HTTP_201_CREATED)
         else:
@@ -168,8 +172,9 @@ def _check_if_user_is_login(username):
 @api_view(['POST'])
 def is_login(request):
     try:
-        username = request.POST['username']
-        if _check_if_user_is_login(username):
+        user_id = request.session['_auth_user_id']
+        user = User.objects.get(id=user_id)
+        if user.is_authenticated:
             return Response(status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
@@ -239,10 +244,11 @@ def email_test(request):
 
 
 def send_invitation_to_user(super_user_password, generated_password, receiver_email, username):
+    front_end_url = "https://mousemanagementsite.herokuapp.com"
     title = "Hello from Mouse Management Committee"
     content = 'Your user has been created by Admin\n'\
-              'Please Click the following link to update the password:\n' \
-              'https://mousemanagementsite.herokuapp.com/updatepwdnewuser?secret_key=' + generated_password + \
+              'Please Click the following link to update the password:\n' +\
+              front_end_url + '/updatepwdnewuser?secret_key=' + generated_password + \
               '&username=' + username
 
     res = send_email(title, content, super_user_password, receiver_email)
@@ -341,5 +347,25 @@ def user_reset_new_pwd(request):
         except User.DoesNotExist:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+    except KeyError:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_all_user_info(request):
+    try:
+        user_id = request.session['_auth_user_id']
+        try:
+            user = User.objects.get(id=user_id)
+
+            if user.is_superuser and user.is_active and user.is_authenticated:
+                user_list = User.objects.all()
+                user_viewer = JsonUserViewer()
+
+                return Response(user_viewer.transform(user_list))
+            else:
+                return Response(status=status.HTTP_401_UNAUTHORIZED)
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
     except KeyError:
         return Response(status=status.HTTP_400_BAD_REQUEST)

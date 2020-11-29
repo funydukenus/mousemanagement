@@ -54,9 +54,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ORIGIN_ALLOW_ALL = True
+# CORS_ORIGIN_ALLOW_ALL = True
 
 CORS_ALLOW_HEADERS = [
+    'Access-Control-Allow-Origin',
     'accept',
     'accept-encoding',
     'authorization',
@@ -67,6 +68,9 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
     'enctype',
+    'observe',
+    'responseType',
+    'withCredentials'
 ]
 
 REST_FRAMEWORK = {
@@ -77,6 +81,8 @@ REST_FRAMEWORK = {
 }
 
 ROOT_URLCONF = 'mousemanagement.urls'
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.file'
 
 TEMPLATES = [
     {
@@ -104,6 +110,17 @@ WSGI_APPLICATION = 'mousemanagement.wsgi.application'
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',
 #         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': 'mousemanagement',
+#         'USER': 'postgres',
+#         'PASSWORD': '33360411',
+#         'HOST': '127.0.0.1',
+#         'PORT': '5432',
 #     }
 # }
 
