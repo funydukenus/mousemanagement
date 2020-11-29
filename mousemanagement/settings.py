@@ -93,10 +93,10 @@ ROOT_URLCONF = 'mousemanagement.urls'
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = 'strict'
-SESSION_COOKIE_SAMESITE = 'strict'
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SAMESITE = 'lax'
+SESSION_COOKIE_SAMESITE = 'lax'
 
 TEMPLATES = [
     {
