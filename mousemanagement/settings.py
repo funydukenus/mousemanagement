@@ -26,7 +26,7 @@ SECRET_KEY = 'wtzs$+6_@w(u*+ol_zw^046#@r2e*fj!-1lu(**=whh#05xih2'
 DEBUG = True
 
 # ALLOWED_HOSTS = ['mousemanagement.herokuapp.com', '127.0.0.1', '192.168.50.194']
-ALLOWED_HOSTS = ['mousemanagement.herokuapp.com', 'https://mousemanagementsite.herokuapp.com', 'http://localhost:4200']
+ALLOWED_HOSTS = ['localhost', 'mousemanagement.herokuapp.com', 'mousemanagementsite.herokuapp.com']
 
 # Application definition
 
