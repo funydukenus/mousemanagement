@@ -64,15 +64,6 @@ CORS_ALLOWED_ORIGINS = [
     'https://mousemanagementsite.herokuapp.com'     # For production
 ]
 
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
-
 CORS_ALLOW_HEADERS = [
     'Access-Control-Allow-Origin',
     'access-control-allow-credentials',
@@ -100,7 +91,12 @@ REST_FRAMEWORK = {
 
 ROOT_URLCONF = 'mousemanagement.urls'
 
-SESSION_ENGINE= 'django.contrib.sessions.backends.cached_db'
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'strict'
+SESSION_COOKIE_SAMESITE = 'strict'
 
 TEMPLATES = [
     {
