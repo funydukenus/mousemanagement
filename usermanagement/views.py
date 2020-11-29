@@ -1,10 +1,8 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.http import HttpResponse
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
-from hashlib import sha1
 
 # Used for generate random alphanumeric string
 import random
@@ -176,11 +174,11 @@ def is_login(request):
         user_id = request.session['_auth_user_id']
         user = User.objects.get(id=user_id)
         if user.is_authenticated:
-            return Response(status=status.HTTP_200_OK)
+            return Response(data="authen", status=status.HTTP_200_OK)
         else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            return Response(data="notauthen", status=status.HTTP_401_UNAUTHORIZED)
     except KeyError:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(data="KeyError", status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
