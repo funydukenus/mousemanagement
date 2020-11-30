@@ -253,7 +253,7 @@ class Mouse:
     def __eq__(self, other):
         return self.physical_id == other.physical_id and \
                self.handler == other.handler and \
-               self.gender == other.gender and \
+               (self.gender == other.gender or self.gender[0] == other.gender or self.gender == other.gender[0]) and \
                self.mouseline == other.mouseline and \
                self.genotype == other.genotype and \
                self.birth_date == other.birth_date and \
@@ -288,6 +288,12 @@ class Mouse:
 
     @gender.setter
     def gender(self, gender):
+        if gender == 'Male' or gender == 'M':
+            gender = 'M'
+        elif gender == 'Female' or gender == 'F':
+            gender = 'F'
+        else:
+            gender = 'U'
         self.__gender = gender
 
     @property

@@ -52,7 +52,7 @@ def user_create(request):
         except User.DoesNotExist:
             # if user is not exist, we are allow to
             # create the user
-            _interal_create_user(
+            _internal_create_user(
                 username=username,
                 password=password,
                 email=email
@@ -120,7 +120,7 @@ def create_super_user(request):
         if not verify_super_user_email(email, password):
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         if secret_key == 'LAB_AADDGGE':
-            _interal_create_user(
+            _internal_create_user(
                 username=username,
                 password=password,
                 email=email,
@@ -134,7 +134,7 @@ def create_super_user(request):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
-def _interal_create_user(username, password, email, is_super_user=False, is_active=False):
+def _internal_create_user(username, password, email, is_super_user=False, is_active=False):
     user = User.objects.create_user(
         username=username,
         password=password,
@@ -173,13 +173,12 @@ def _check_if_user_is_login(username):
 @api_view(['POST'])
 def is_login(request):
     try:
-        s = request.session
         user_id = request.session['_auth_user_id']
         user = User.objects.get(id=user_id)
         if user.is_authenticated:
-            return Response(data="authen", status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_200_OK)
         else:
-            return Response(data="notauthen", status=status.HTTP_401_UNAUTHORIZED)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
     except KeyError:
         key_str = ""
         for k in request.session.keys():
@@ -200,8 +199,8 @@ def get_random_alphanumeric_string(letters_count, digits_count):
     """
     Generate random number based on the letters count and digits count
     """
-    sample_str = ''.join((random.choice(string.ascii_letters) for i in range(letters_count)))
-    sample_str += ''.join((random.choice(string.digits) for i in range(digits_count)))
+    sample_str = ''.join((random.choice(string.ascii_letters) for _ in range(letters_count)))
+    sample_str += ''.join((random.choice(string.digits) for _ in range(digits_count)))
 
     # Convert string to list and shuffle it to mix letters and digits
     sample_list = list(sample_str)
@@ -301,7 +300,7 @@ def create_inactive_user(request):
             if send_invitation_to_user(superuser_password, password, email, username):
                 # if user is not exist, we are allow to
                 # create the user
-                _interal_create_user(
+                _internal_create_user(
                     username=username,
                     password=password,
                     email=email

@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'wtzs$+6_@w(u*+ol_zw^046#@r2e*fj!-1lu(**=whh#05xih2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # ALLOWED_HOSTS = ['mousemanagement.herokuapp.com', '127.0.0.1', '192.168.50.194']
 ALLOWED_HOSTS = ['*']
@@ -55,14 +55,21 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-# If this is used, then not need to use `CORS_ORIGIN_ALLOW_ALL = True`
-# CORS_ORIGIN_ALLOW_ALL = True
 
+"""
+By regulations of WW3, current browser added CORS, Access-Control-Allow-Origin, and SameSite cookies protection
+from cross site access.
+SameSite is a property that can be set in HTTP cookies to prevent Cross Site Request Forgery(CSRF) attacks in web applications:
+When SameSite is set to Lax , the cookie is sent in requests within the same site and in GET requests from other sites
+So basically, for cross site cookies,
+1. Samesite must be none
+2. Secure connection is needed
+3. Allow credentials must be in the request heaeder in order to send session over to server.
+4. CORS Origin Allow All origin
+"""
 CORS_ALLOW_CREDENTIALS = True
-
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_SAMESITE = 'None'
-
 CORS_ORIGIN_ALLOW_ALL = True
 
 CORS_ALLOW_HEADERS = [
@@ -112,7 +119,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mousemanagement.wsgi.application'
 
-
+"""
+THis is the default setting which use of the file-method to store the db data
+"""
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
@@ -123,18 +132,26 @@ WSGI_APPLICATION = 'mousemanagement.wsgi.application'
 #     }
 # }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': 'mousemanagement',
-#         'USER': 'postgres',
-#         'PASSWORD': '33360411',
-#         'HOST': '127.0.0.1',
-#         'PORT': '5432',
-#     }
-# }
 
-DATABASES = {'default': dj_database_url.config(conn_max_age=600, ssl_require=True)}
+"""
+THis is use for unbench testing where django app connecting to local postgresql server using psycopg2
+"""
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'mousemanagement',
+            'USER': 'postgres',
+            'PASSWORD': '33360411',
+            'HOST': '127.0.0.1',
+            'PORT': '5432',
+        }
+    }
+else:
+    """
+    THis is used in the heroku environment to connect to the postgresql within the heroku app
+    """
+    DATABASES = {'default': dj_database_url.config(conn_max_age=600, ssl_require=True)}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -176,4 +193,3 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 django_heroku.settings(locals())
-

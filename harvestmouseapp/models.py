@@ -11,6 +11,7 @@ class HarvestedMouse(models.Model):
     GENDER_CHOICES = (
         ('M', 'Male'),
         ('F', 'Female'),
+        ('U', 'Unknown')
     )
 
     handler = models.TextField()
