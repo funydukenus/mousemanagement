@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'harvestmouseapp.apps.HarvestmouseappConfig',
-    'usermanagement.apps.UsermanagementConfig'
+    'usermanagement.apps.UsermanagementConfig',
+    'django_extensions'
 ]
 
 MIDDLEWARE = [
@@ -61,6 +62,8 @@ CORS_ALLOW_CREDENTIALS = True
 
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_SAMESITE = 'None'
+
+CORS_ORIGIN_ALLOW_ALL = True
 
 CORS_ALLOW_HEADERS = [
     'Access-Control-Allow-Origin',
