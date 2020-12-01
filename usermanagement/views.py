@@ -320,7 +320,7 @@ def email_test(request):
 
 
 def send_invitation_to_user(firstname, lastname, generated_password, receiver_email, username):
-    if not DEBUG:
+    if DEBUG:
         front_end_url = "http://localhost:4200"
     else:
         front_end_url = "https://mousemanagementsite.herokuapp.com"
