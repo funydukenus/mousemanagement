@@ -31,14 +31,21 @@ def _distribute_data_to_user(user_data):
     """
 
     # Different from mouse list, treats all resulst as if it's list
+    if user_data.last_login:
+        last_login_date = user_data.last_login.strftime("%m-%d-%Y,%H:%M:%S")
+    else:
+        last_login_date = 'None'
     dict_m = {
+        'firstname': user_data.first_name,
+        'lastname': user_data.last_name,
         'username': user_data.username,
         'email': user_data.email,
         'is_active': user_data.is_active,
         'created_date': user_data.date_joined.strftime("%m-%d-%Y,%H:%M:%S"),
-        'last_login_date': user_data.last_login.strftime("%m-%d-%Y,%H:%M:%S"),
-        'is_login': user_data.is_authenticated,
-        'is_admin': user_data.is_superuser
+        'last_login_date': last_login_date,
+        'is_admin': user_data.is_superuser,
+        'is_cur_login': user_data.userextend.is_logged_in_verified,
+        'is_email_verified': user_data.userextend.is_email_verified
     }
     return dict_m
 

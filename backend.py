@@ -6,8 +6,10 @@ from consolemenu import *
 from consolemenu.items import *
 import requests
 import pandas as pd
-API_ENDPOINT = 'https://mousemanagement.herokuapp.com/'
-# API_ENDPOINT = 'http://127.0.0.1:8000/'
+# API_ENDPOINT_NO_API = 'https://mousemanagement.herokuapp.com/'
+API_ENDPOINT_NO_API = 'http://localhost:8000/'
+API_ENDPOINT = API_ENDPOINT_NO_API + 'api/'
+
 HARVESTED_MOUSE_API_ENDPOINT = API_ENDPOINT + 'harvestedmouse/'
 INSERT_API_ENDPOINT = HARVESTED_MOUSE_API_ENDPOINT + 'insert'
 UPDATE_API_ENDPOINT = HARVESTED_MOUSE_API_ENDPOINT + 'update'
@@ -24,7 +26,7 @@ IS_USER_API_ENDPOINT = USER_API_ENDPOINT + 'is_user_empty'
 SEND_EMAIL_API_ENDPOINT = USER_API_ENDPOINT + 'sendemail'
 DELETE_ALL_USER_API_ENDPOINT = USER_API_ENDPOINT + 'deletealluser'
 
-HAND_SHAKE_API_ENDPOINT = API_ENDPOINT + 'hc'
+HAND_SHAKE_API_ENDPOINT = USER_API_ENDPOINT + 'hc'
 
 menu = ConsoleMenu('Backend Harvested Mouse Management', 'FNY Lab', show_exit_option=False)
 
@@ -57,7 +59,7 @@ def gui_start():
 
     function_send_email = FunctionItem("Send Email", send_email)
 
-    function_exit = FunctionItem("Exit", exit_console)
+    # function_exit = FunctionItem("Exit", exit_console)
 
     # Once we're done creating them, we just add the items to the menu
     menu.append_item(menu_item)
@@ -71,9 +73,9 @@ def gui_start():
     menu.append_item(function_user_logout)
     menu.append_item(function_user_delete_all)
     menu.append_item(function_send_email)
-    menu.append_item(function_exit)
+    menu.add_exit()
     # Finally, we call show to show the menu and allow the user to interact
-    menu.show()
+    menu.show(True)
 
 
 def hand_shake():
@@ -95,12 +97,10 @@ def user_delete_all():
 def send_email():
     title = input("Enter title: ")
     content = input("Enter Content: ")
-    password = input("Enter Super User password: ")
 
     post_data = {
         'title': title,
-        'content': content,
-        'password': password
+        'content': content
     }
 
     r = requests.post(url=SEND_EMAIL_API_ENDPOINT, data=post_data)
@@ -114,11 +114,15 @@ def create_user():
     username = input("Enter your username: ")
     superuser_password = input("Enter superuser_password: ")
     email = input("Enter your email: ")
+    firstname = input("Enter your firstname: ")
+    lastname = input("Enter your lastname: ")
 
     post_data = {
         'username': username,
         'superuser_password': superuser_password,
-        'email': email
+        'email': email,
+        'firstname': firstname,
+        'lastname': lastname
     }
 
     r = requests.post(url=CREATE_USER_API_ENDPOINT, data=post_data)
@@ -132,12 +136,16 @@ def create_super_user():
     username = input("Enter your username: ")
     password = input("Enter your password: ")
     email = input("Enter your email: ")
+    firstname = input("Enter your firstname: ")
+    lastname = input("Enter your lastname: ")
     secret_key = 'LAB_AADDGGE'
 
     post_data = {
         'username': username,
         'password': password,
         'email': email,
+        'firstname': firstname,
+        'lastname': lastname,
         'secret_key': secret_key
     }
 
@@ -152,6 +160,7 @@ def user_logout():
     r = requests.get(url=LOGOUT_USER_API_ENDPOINT)
     if r.status_code == 200:
         print('OK')
+        menu.exit()
     else:
         print('FAIL')
 
@@ -174,8 +183,6 @@ def user_login():
 
 def exit_console():
     user_logout()
-    menu.exit()
-
 
 def list_all_mouse_on_screen():
     print('Sending list command')

@@ -12,6 +12,11 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from usermanagement.UserViewer import JsonUserViewer
+from mousemanagement.settings import DEBUG, SEND_GRID_API_KEY
+
+import os
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 
 @api_view(['POST'])
@@ -20,11 +25,13 @@ def user_login(request):
         username = request.POST['username']
         password = request.POST['password']
         user = authenticate(request, username=username, password=password)
-        if user is not None:
+        if user is not None and user.is_active:
             login(request, user)
             key_str = ""
             for k in request.session.keys():
                 key_str += " " + k
+            user.userextend.is_logged_in_verified = True
+            user.save()
             return Response(data=key_str, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
@@ -34,8 +41,17 @@ def user_login(request):
 
 @api_view(['GET'])
 def user_logout(request):
-    logout(request)
-    return Response(status=status.HTTP_200_OK)
+    try:
+        user_id = request.session['_auth_user_id']
+        user = User.objects.get(id=user_id)
+        user.userextend.is_logged_in_verified = False
+        user.save()
+        logout(request)
+        return Response(status=status.HTTP_200_OK)
+    except KeyError:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
 @api_view(['POST'])
@@ -46,6 +62,8 @@ def user_create(request):
         password = request.POST['password']
         email = request.POST['email']
 
+        firstname = request.POST['firstname']
+        lastname = request.POST['lastname']
         try:
             User.objects.get(username=username)
             return Response(status=status.HTTP_302_FOUND)
@@ -55,7 +73,9 @@ def user_create(request):
             _internal_create_user(
                 username=username,
                 password=password,
-                email=email
+                email=email,
+                firstname = firstname,
+                lastname = lastname
             )
             return Response(status=status.HTTP_201_CREATED)
 
@@ -115,6 +135,9 @@ def create_super_user(request):
         username = request.POST['username']
         password = request.POST['password']
         email = request.POST['email']
+        firstname = request.POST['firstname']
+        lastname = request.POST['lastname']
+
         secret_key = request.POST['secret_key']
 
         if not verify_super_user_email(email, password):
@@ -124,8 +147,11 @@ def create_super_user(request):
                 username=username,
                 password=password,
                 email=email,
+                firstname=firstname,
+                lastname=lastname,
                 is_super_user=True,
-                is_active=True
+                is_active=True,
+                is_email_verified=True
             )
             return Response(status=status.HTTP_201_CREATED)
         else:
@@ -134,16 +160,19 @@ def create_super_user(request):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
-def _internal_create_user(username, password, email, is_super_user=False, is_active=False):
+def _internal_create_user(username, password, email, firstname, lastname, is_super_user=False, is_active=False, is_email_verified=False):
     user = User.objects.create_user(
         username=username,
         password=password,
-        email=email
+        email=email,
+        first_name=firstname,
+        last_name=lastname
     )
     user.is_staff = True
     user.is_active = is_active
     user.is_admin = is_super_user
     user.is_superuser = is_super_user
+    user.userextend.is_email_verified = is_email_verified
     user.save()
 
     return user
@@ -175,7 +204,7 @@ def is_login(request):
     try:
         user_id = request.session['_auth_user_id']
         user = User.objects.get(id=user_id)
-        if user.is_authenticated:
+        if user.is_authenticated and user.userextend.is_logged_in_verified:
             return Response(status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
@@ -184,6 +213,19 @@ def is_login(request):
         for k in request.session.keys():
             key_str += " " + k
         return Response(data=key_str, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def is_admin(request):
+    try:
+        user_id = request.session['_auth_user_id']
+        user = User.objects.get(id=user_id)
+        if user.is_authenticated and user.is_superuser:
+            return Response(data="1", status=status.HTTP_200_OK)
+        else:
+            return Response(data="0", status=status.HTTP_200_OK)
+    except KeyError:
+        return Response(data="0", status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -221,41 +263,76 @@ def verify_super_user_email(email, password):
     return True
 
 
-def low_level_send_email(sender_email, password, receiver_email, title, content):
-    message = MIMEMultipart()
-    message['From'] = sender_email
-    message['To'] = receiver_email
-    message['Subject'] = title  # The subject line
-    # The body and the attachments for the mail
-    message.attach(MIMEText(content, 'plain'))
-    # Create SMTP session for sending the mail
-    session = smtplib.SMTP('smtp.gmail.com', 587)  # use gmail with port
-    session.starttls()  # enable security
-    session.login(sender_email, password)  # login with mail_id and password
-    text = message.as_string()
-    session.sendmail(sender_email, receiver_email, text)
-    session.quit()
+def low_level_send_email(sender_email, receiver_email, title, content):
 
+    # Using SendGrid services as email relay
+    message = Mail(
+        from_email=sender_email,
+        to_emails=receiver_email,
+        subject=title,
+        html_content=content)
+    try:
+        sg = SendGridAPIClient(SEND_GRID_API_KEY)
+        response = sg.send(message)
+        if response.status_code == 202:
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+    except Exception as e:
+        return Response(status=e.message)
+    # We will not using gmail services
+    # message = MIMEMultipart()
+    # message['From'] = sender_email
+    # message['To'] = receiver_email
+    # message['Subject'] = title  # The subject line
+    # # The body and the attachments for the mail
+    # message.attach(MIMEText(content, 'plain'))
+    # # Create SMTP session for sending the mail
+    # session = smtplib.SMTP('smtp.gmail.com', 587)  # use gmail with port
+    # session.starttls()  # enable security
+    # session.login(sender_email, password)  # login with mail_id and password
+    # text = message.as_string()
+    # session.sendmail(sender_email, receiver_email, text)
+    # session.quit()
 
 @api_view(['POST'])
 def email_test(request):
     title = request.POST['title']
     content = request.POST['content']
-    password = request.POST['password']
     receiver_email = "chenyuhang01@gmail.com"
 
-    return send_email(title, content, password, receiver_email)
+    message = Mail(
+        from_email='fny.duke.nus@gmail.com',
+        to_emails=receiver_email,
+        subject=title,
+        html_content=content)
+    try:
+        sg = SendGridAPIClient(SEND_GRID_API_KEY)
+        response = sg.send(message)
+        if response.status_code == 202:
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+    except Exception as e:
+        return Response(status=e.message)
+
+    # return send_email(title, content, password, receiver_email)
 
 
-def send_invitation_to_user(super_user_password, generated_password, receiver_email, username):
-    front_end_url = "https://mousemanagementsite.herokuapp.com"
+def send_invitation_to_user(firstname, lastname, generated_password, receiver_email, username):
+    if DEBUG:
+        front_end_url = "http://localhost:4200"
+    else:
+        front_end_url = "https://mousemanagementsite.herokuapp.com"
     title = "Hello from Mouse Management Committee"
-    content = 'Your user has been created by Admin\n'\
+    content = 'Hello ' + lastname + ' ' + firstname +\
+              '\nYour user account has been created by Admin\n'\
               'Please Click the following link to update the password:\n' +\
               front_end_url + '/updatepwdnewuser?secret_key=' + generated_password + \
-              '&username=' + username
+              '&username=' + username + \
+              '\n\n\nRegards'
 
-    res = send_email(title, content, super_user_password, receiver_email)
+    res = send_email(title, content, receiver_email)
 
     if res.status_code == 200:
         return True
@@ -263,14 +340,10 @@ def send_invitation_to_user(super_user_password, generated_password, receiver_em
         return False
 
 
-def send_email(title, content, password, receiver_email):
+def send_email(title, content, receiver_email):
     try:
         superusers = User.objects.get(is_superuser=True)
-        if superusers.check_password(password):
-            low_level_send_email(superusers.email, password, receiver_email, title, content)
-            return Response(status=status.HTTP_200_OK)
-        else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        return low_level_send_email(superusers.email, receiver_email, title, content)
     except smtplib.SMTPHeloError:
         return Response(status=status.HTTP_400_BAD_REQUEST)
     except smtplib.SMTPRecipientsRefused:
@@ -289,21 +362,25 @@ def send_email(title, content, password, receiver_email):
 def create_inactive_user(request):
     try:
         username = request.POST['username']
-        superuser_password = request.POST['superuser_password']
         # Generate a random default password for the user
         password = get_random_alphanumeric_string(20, 20)
         email = request.POST['email']
+        firstname = request.POST['firstname']
+        lastname = request.POST['lastname']
+
         try:
             User.objects.get(username=username)
             return Response(status=status.HTTP_302_FOUND)
         except User.DoesNotExist:
-            if send_invitation_to_user(superuser_password, password, email, username):
+            if send_invitation_to_user(firstname, lastname, password, email, username):
                 # if user is not exist, we are allow to
                 # create the user
                 _internal_create_user(
                     username=username,
                     password=password,
-                    email=email
+                    email=email,
+                    firstname=firstname,
+                    lastname=lastname
                 )
                 return Response(status=status.HTTP_201_CREATED)
             else:
@@ -339,11 +416,12 @@ def user_reset_new_pwd(request):
         password = request.POST['password']
         try:
             user = User.objects.get(username=username)
-            if not user.check_password(secret_key) or user.is_active:
+            if not (user.check_password(secret_key) or user.is_active):
                 return Response(status=status.HTTP_400_BAD_REQUEST)
 
             user.set_password(password)
             user.is_active = True
+            user.userextend.is_email_verified = True
             user.save()
 
             return Response(status=status.HTTP_200_OK)
@@ -367,6 +445,65 @@ def get_all_user_info(request):
                 user_viewer = JsonUserViewer()
 
                 return Response(user_viewer.transform(user_list))
+            else:
+                return Response(status=status.HTTP_401_UNAUTHORIZED)
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+    except KeyError:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def toggle_activity_user(request):
+    try:
+        user_id = request.session['_auth_user_id']
+        username = request.POST['username']
+        is_user_active_aft_change = request.POST['is_active']
+
+        if is_user_active_aft_change == 'false':
+            is_user_active_aft_change = False
+        else:
+            is_user_active_aft_change = True
+
+        try:
+            super_user = User.objects.get(id=user_id)
+
+            if super_user.is_superuser and super_user.is_active and super_user.is_authenticated:
+                user = User.objects.get(username=username)
+
+                # Only can toggle the user with email verified
+                if not(user.id == super_user.id and user.userextend.is_email_verified):
+                    user.is_active = is_user_active_aft_change
+                    user.save()
+                    return Response(data="Success", status=status.HTTP_200_OK)
+                else:
+                    return Response(data="You cannot change yourself", status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_401_UNAUTHORIZED)
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+    except KeyError:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def delete_user(request):
+    try:
+        user_id = request.session['_auth_user_id']
+        username = request.POST['username']
+
+        try:
+            super_user = User.objects.get(id=user_id)
+
+            if super_user.is_superuser and super_user.is_active and super_user.is_authenticated:
+                user = User.objects.get(username=username)
+
+                # Only can toggle the user with email verified
+                if not(user.id == super_user.id):
+                    user.delete()
+                    return Response(data="Success", status=status.HTTP_200_OK)
+                else:
+                    return Response(data="You cannot delete yourself", status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_401_UNAUTHORIZED)
         except User.DoesNotExist:

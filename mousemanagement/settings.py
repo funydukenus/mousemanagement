@@ -68,8 +68,9 @@ So basically, for cross site cookies,
 4. CORS Origin Allow All origin
 """
 CORS_ALLOW_CREDENTIALS = True
-SESSION_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = 'None'
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = 'None'
 CORS_ORIGIN_ALLOW_ALL = True
 
 CORS_ALLOW_HEADERS = [
@@ -193,3 +194,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 django_heroku.settings(locals())
+
+# API KEY for Send Grid services
+SEND_GRID_API_KEY = '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'
