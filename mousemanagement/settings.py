@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'wtzs$+6_@w(u*+ol_zw^046#@r2e*fj!-1lu(**=whh#05xih2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 # ALLOWED_HOSTS = ['mousemanagement.herokuapp.com', '127.0.0.1', '192.168.50.194']
 ALLOWED_HOSTS = ['*']
@@ -137,7 +137,7 @@ THis is the default setting which use of the file-method to store the db data
 """
 THis is use for unbench testing where django app connecting to local postgresql server using psycopg2
 """
-if DEBUG:
+if not DEBUG:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
