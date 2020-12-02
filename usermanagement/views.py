@@ -27,12 +27,13 @@ def user_login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None and user.is_active:
             login(request, user)
-            key_str = ""
-            for k in request.session.keys():
-                key_str += " " + k
-            user.userextend.is_logged_in_verified = True
-            user.save()
-            return Response(data=key_str, status=status.HTTP_200_OK)
+            try:
+                user = User.objects.get(id=user.id)
+                user_viewer = JsonUserViewer()
+
+                return Response(user_viewer.transform(user), status=status.HTTP_200_OK)
+            except User.DoesNotExist:
+                return Response(data="User not found", status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
     except KeyError:
@@ -520,7 +521,7 @@ def get_logged_user_info(request):
             user = User.objects.get(id=user_id)
             user_viewer = JsonUserViewer()
 
-            return Response(user_viewer.transform(user))
+            return Response(user_viewer.transform(user), status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response(data="User not found", status=status.HTTP_200_OK)
     except KeyError:
