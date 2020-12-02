@@ -2,7 +2,7 @@ from django.urls import path
 
 from usermanagement.views import user_login, user_logout, user_change_password, create_inactive_user, create_super_user, \
     is_user_table_empty, is_login, email_test, clear_all_user, check_secret_key, user_reset_new_pwd, get_all_user_info, \
-    hand_checking, toggle_activity_user, is_admin, delete_user
+    hand_checking, toggle_activity_user, is_admin, delete_user, get_logged_user_info
 
 urlpatterns = [
     path('login', user_login),
@@ -20,5 +20,6 @@ urlpatterns = [
     path('toggle-activity-user', toggle_activity_user),
     path('delete-user', delete_user),
     path('is-admin', is_admin),
+    path('get-logged-user-info', get_logged_user_info),
     path('hc', hand_checking)
 ]

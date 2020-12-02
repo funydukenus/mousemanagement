@@ -328,7 +328,7 @@ def send_invitation_to_user(firstname, lastname, generated_password, receiver_em
     content = 'Hello ' + lastname + ' ' + firstname +\
               '\nYour user account has been created by Admin\n'\
               'Please Click the following link to update the password:\n' +\
-              front_end_url + '/updatepwdnewuser?secret_key=' + generated_password + \
+              front_end_url + '/update-pwd-new-user?secret_key=' + generated_password + \
               '&username=' + username + \
               '\n\n\nRegards'
 
@@ -510,3 +510,18 @@ def delete_user(request):
             return Response(status=status.HTTP_400_BAD_REQUEST)
     except KeyError:
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_logged_user_info(request):
+    try:
+        user_id = request.session['_auth_user_id']
+        try:
+            user = User.objects.get(id=user_id)
+            user_viewer = JsonUserViewer()
+
+            return Response(user_viewer.transform(user))
+        except User.DoesNotExist:
+            return Response(data="User not found", status=status.HTTP_200_OK)
+    except KeyError:
+        return Response(data="Not logged",status=status.HTTP_200_OK)

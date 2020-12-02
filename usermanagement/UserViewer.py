@@ -57,8 +57,12 @@ def _convert_user_to_dict(user_data):
     """
     dict_m = {'user_list': []}
     arr_m = dict_m['user_list']
-    for user in user_data:
-        arr_m.append(
-            _distribute_data_to_user(user)
-        )
-    return dict_m
+    try:
+        for user in user_data:
+            arr_m.append(
+                _distribute_data_to_user(user)
+            )
+        return dict_m
+    except TypeError:
+        return _distribute_data_to_user(user_data)
+
