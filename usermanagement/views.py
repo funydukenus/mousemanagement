@@ -68,15 +68,18 @@ def user_create(request):
         except User.DoesNotExist:
             # if user is not exist, we are allow to
             # create the user
-            _internal_create_user(
-                username=username,
-                password=password,
-                email=email,
-                firstname = firstname,
-                lastname = lastname
-            )
-            return Response(status=status.HTTP_201_CREATED)
-
+            try:
+                User.objects.get(email=email)
+                return Response(status=status.HTTP_302_FOUND)
+            except User.DoesNotExist:
+                _internal_create_user(
+                    username=username,
+                    password=password,
+                    email=email,
+                    firstname = firstname,
+                    lastname = lastname
+                )
+                return Response(status=status.HTTP_201_CREATED)
     except KeyError:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -323,12 +326,12 @@ def send_invitation_to_user(firstname, lastname, generated_password, receiver_em
     else:
         front_end_url = "https://mousemanagementsite.herokuapp.com"
     title = "Hello from Mouse Management Committee"
-    content = 'Hello ' + lastname + ' ' + firstname +\
-              '\nYour user account has been created by Admin\n'\
-              'Please Click the following link to update the password:\n' +\
+    content = '<h2>Hello ' + lastname + ' ' + firstname + '</h2>'\
+              '<p>Your user account has been created by Admin</p>'\
+              '<p>Please Click the following link to update the password:</p><p>' +\
               front_end_url + '/update-pwd-new-user?secret_key=' + generated_password + \
               '&username=' + username + \
-              '\n\n\nRegards'
+              '</p><br /><p>Regards</p>'
 
     res = send_email(title, content, receiver_email)
 
@@ -368,23 +371,27 @@ def create_inactive_user(request):
 
         try:
             User.objects.get(username=username)
-            return Response(status=status.HTTP_302_FOUND)
+            return Response(data="User existed", status=status.HTTP_302_FOUND)
         except User.DoesNotExist:
-            if send_invitation_to_user(firstname, lastname, password, email, username):
-                # if user is not exist, we are allow to
-                # create the user
-                _internal_create_user(
-                    username=username,
-                    password=password,
-                    email=email,
-                    firstname=firstname,
-                    lastname=lastname
-                )
-                return Response(status=status.HTTP_201_CREATED)
-            else:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
+            try:
+                User.objects.get(email=email)
+                return Response(data="Email has been registered", status=status.HTTP_302_FOUND)
+            except User.DoesNotExist:
+                if send_invitation_to_user(firstname, lastname, password, email, username):
+                    # if user is not exist, we are allow to
+                    # create the user
+                    _internal_create_user(
+                        username=username,
+                        password=password,
+                        email=email,
+                        firstname=firstname,
+                        lastname=lastname
+                    )
+                    return Response(data="Success", status=status.HTTP_201_CREATED)
+                else:
+                    return Response(data="Email service not available", status=status.HTTP_400_BAD_REQUEST)
     except KeyError:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(data="You are not allowed to create user", status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
