@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'harvestmouseapp.apps.HarvestmouseappConfig',
     'usermanagement.apps.UsermanagementConfig',
+    # 'django_extensions'
 ]
 
 MIDDLEWARE = [
