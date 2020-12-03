@@ -1,5 +1,6 @@
 from django.urls import path, include
-from harvestmouseapp.views import harvested_mouse_insertion, harvested_mouse_force_list
+from harvestmouseapp.views import harvested_mouse_insertion, harvested_mouse_force_list, parsing_imported_mouse, \
+    gets_mouse_csv_info
 from harvestmouseapp.views import harvested_mouse_list
 from harvestmouseapp.views import harvested_mouse_update
 from harvestmouseapp.views import harvested_mouse_delete
@@ -18,5 +19,7 @@ urlpatterns = [
     path('delete', harvested_mouse_delete),
     path('delete/all', harvested_all_mouse_delete),
     path('import', harvested_import_mouse),
-    path('getdatalist', get_data_option_list)
+    path('getdatalist', get_data_option_list),
+    path('parsing_imported_mouse', parsing_imported_mouse),
+    path('gets_mouse_csv_info', gets_mouse_csv_info)
 ]

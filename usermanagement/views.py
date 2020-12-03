@@ -8,13 +8,8 @@ from rest_framework.decorators import api_view
 import random
 import string
 import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-
 from usermanagement.UserViewer import JsonUserViewer
 from mousemanagement.settings import DEBUG, SEND_GRID_API_KEY
-
-import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 

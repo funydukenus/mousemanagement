@@ -3,6 +3,8 @@ from django.db import DatabaseError
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
+from usermanagement.views import get_random_alphanumeric_string
 from .mvc_model.Error import DuplicationMouseError, MouseNotFoundError
 from .mvc_model.model import Mouse, AdvancedRecord, Record, MouseList
 from django import forms
@@ -14,6 +16,8 @@ from harvestmouseapp.mvc_model.mouseAdapter import JsonModelAdapter
 from harvestmouseapp.mvc_model.mouseController import MouseController
 from harvestmouseapp.mvc_model.mouseViewer import JsonMouseViewer
 from .mvc_model.mouseFilter import FilterOption, MouseFilter, get_enum_by_value
+import os
+
 
 mouse_controller_g = MouseController()
 mouse_controller_g.set_db_adapter(GenericSqliteConnector())
@@ -50,7 +54,7 @@ def harvested_mouse_list(request):
     List all the harvested mouse
     { 'filter': '[column_name_1]@[value_1]@[filter_option_1]$[column_name_2][value_2][filter_option_2]' }
     """
-    #if not _check_if_user_is_login(request.session):
+    # if not _check_if_user_is_login(request.session):
     #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     option_found = False
@@ -92,10 +96,10 @@ def harvested_mouse_force_list(request):
     by Json
     { 'filter': '[column_name_1]@[value_1]@[filter_option_1]$[column_name_2][value_2][filter_option_2]' }
     """
-    #if not _check_if_user_is_login(request.session):
+    # if not _check_if_user_is_login(request.session):
     #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-    #if not _check_if_user_is_login(request.session):
+    # if not _check_if_user_is_login(request.session):
     #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     option_found = False
@@ -134,7 +138,7 @@ def harvested_mouse_insertion(request):
     """
     Insertion of the harvested mouse into database
     """
-    #if not _check_if_user_is_login(request.session):
+    # if not _check_if_user_is_login(request.session):
     #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     try:
@@ -153,7 +157,7 @@ def harvested_mouse_update(request):
     """
     Update of the harvested mouse into database
     """
-    #if not _check_if_user_is_login(request.session):
+    # if not _check_if_user_is_login(request.session):
     #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     try:
@@ -172,7 +176,7 @@ def harvested_mouse_delete(request):
     """
     Delete of the selected harvested mouse
     """
-    #if not _check_if_user_is_login(request.session):
+    # if not _check_if_user_is_login(request.session):
     #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     try:
@@ -194,7 +198,7 @@ def harvested_all_mouse_delete(request):
     """
     Delete of the selected harvested mouse
     """
-    #if not _check_if_user_is_login(request.session):
+    # if not _check_if_user_is_login(request.session):
     #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     try:
@@ -211,30 +215,12 @@ def harvested_all_mouse_delete(request):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['POST'])
-def harvested_import_mouse(request):
-    """
-    Handling of the process of importing external
-    csv file for insertion of list of mouse
-    """
-    #if not _check_if_user_is_login(request.session):
-    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
-
-    form = UploadFileForm(request.POST, request.FILES)
-    if form.is_valid():
-        print(request.FILES['file'].name)
-    if form.is_valid() and request.FILES['file'].name.endswith('.csv'):
-        filename = save_uploaded_file(request.FILES['file'])
-        return insert_external_data(filename)
-    return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
 @api_view(['GET'])
 def get_data_option_list(request):
     """
     Providing the selecting option to the client
     """
-    #if not _check_if_user_is_login(request.session):
+    # if not _check_if_user_is_login(request.session):
     #    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     # Get the list of mouse object first
@@ -263,17 +249,82 @@ def get_data_option_list(request):
     return Response(data)
 
 
+@api_view(['POST'])
+def harvested_import_mouse(request):
+    """
+    Handling of the process of importing external
+    csv file for insertion of list of mouse
+    """
+    try:
+        user_id = request.session['_auth_user_id']
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            filename = request.FILES['file'].name + get_random_alphanumeric_string(20, 20)
+            user.userextend.uploaded_file_name = save_uploaded_file(request.FILES['file'], filename)
+            user.save()
+
+            return Response(status=status.HTTP_200_OK)
+    except KeyError:
+        return Response(data="No session", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def parsing_imported_mouse(request):
+    try:
+        user_id = request.session['_auth_user_id']
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        # Get the last saved filed
+        filename = user.userextend.uploaded_file_name
+        csv_file = pd.read_csv(filename)
+        csv_file = csv_file.fillna('No Data')
+
+        data = { 'error_msg': convert_csv_to_json_arr(csv_file) }
+
+        if os.path.exists(filename):
+            os.remove(filename)
+
+        return Response(data=data, status=status.HTTP_200_OK)
+    except KeyError:
+        return Response(data="No session", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def gets_mouse_csv_info(request):
+    try:
+        user_id = request.session['_auth_user_id']
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        # Get the last saved filed
+        filename = user.userextend.uploaded_file_name
+        csv_file = pd.read_csv(filename)
+
+        return Response(data=len(csv_file), status=status.HTTP_200_OK)
+    except KeyError:
+        return Response(data="No session", status=status.HTTP_400_BAD_REQUEST)
+
+
 # Helper
-def save_uploaded_file(f):
+def save_uploaded_file(f, filename):
     """
     Helper function to save the transmitting csv file
     from the client
     """
-    with open('input.csv', 'wb+') as destination:
+    with open(filename, 'wb+') as destination:
         for chunk in f.chunks():
             destination.write(chunk)
 
-    return 'input.csv'
+    return filename
 
 
 ############################################
@@ -305,74 +356,60 @@ def create_mouse_object(physical_id, handler, gender, mouseline, genotype,
     return harvested_mouse
 
 
-def convert_csv_to_json_arr(filename):
+def convert_csv_to_json_arr(csv_file):
     """
     Helper function to parse the csv file and
     save into database
     """
-    csv_file = pd.read_csv(filename)
-
-    csv_file = csv_file.fillna('No Data')
-
-    mouse_list = MouseList()
-
+    error_msg = ""
     for index, row in csv_file.iterrows():
-        gender = row['gender']
-        if gender == 'Male':
-            gender = 'M'
-        else:
-            gender = 'F'
         try:
+            gender = row['gender']
+            if gender == 'Male':
+                gender = 'M'
+            else:
+                gender = 'F'
+
             birth_date = datetime.strptime(row['birthdate'], '%m-%d-%Y')
             end_date = datetime.strptime(row['End date'], '%m-%d-%Y')
+
+            mouse = create_mouse_object(
+                handler=row['Handled by'],
+                physical_id=row['physical_id'],
+                gender=gender,
+                mouseline=row['mouseline'],
+                genotype=row['Genotype'],
+                birth_date=birth_date.date(),
+                end_date=end_date.date(),
+                cog=row['Confirmation of genotype'],
+                phenotype=row['phenotype'],
+                project_title=row['project_title'],
+                experiment=row['experiment'],
+                comment=row['comment'],
+                pfa_record=AdvancedRecord(
+                    row['PFA Liver'],
+                    row['PFA Liver tumour'],
+                    row['PFA Small intestine'],
+                    row['PFA SI tumour'],
+                    row['PFA Skin'],
+                    row['PFA Skin_Hair'],
+                    row['PFA Others']
+                ),
+                freeze_record=Record(
+                    row['Freeze Liver'],
+                    row['Freeze Liver tumour'],
+                    row['Freeze Others']
+                )
+            )
+
+            # convert to json format
+            json_viewer = JsonMouseViewer()
+
+            mouse_controller_g.create_mouse(json_viewer.transform(mouse))
         except ValueError:
+            error_msg += "Format Error Id:" + row['physical_id'] + "\n"
+        except DuplicationMouseError:
+            error_msg += "Duplicated Error Id:" + row['physical_id'] + "\n"
             continue
 
-        mouse = create_mouse_object(
-            handler=row['Handled by'],
-            physical_id=row['physical_id'],
-            gender=gender,
-            mouseline=row['mouseline'],
-            genotype=row['Genotype'],
-            birth_date=birth_date.date(),
-            end_date=end_date.date(),
-            cog=row['Confirmation of genotype'],
-            phenotype=row['phenotype'],
-            project_title=row['project_title'],
-            experiment=row['experiment'],
-            comment=row['comment'],
-            pfa_record=AdvancedRecord(
-                row['PFA Liver'],
-                row['PFA Liver tumour'],
-                row['PFA Small intestine'],
-                row['PFA SI tumour'],
-                row['PFA Skin'],
-                row['PFA Skin_Hair'],
-                row['PFA Others']
-            ),
-            freeze_record=Record(
-                row['Freeze Liver'],
-                row['Freeze Liver tumour'],
-                row['Freeze Others']
-            )
-        )
-
-        mouse_list.add_mouse(mouse)
-
-    return mouse_list
-
-
-def insert_external_data(filename):
-    """
-    Handling of the external csv file and return status based on the
-    result of the processing file
-    """
-    mouse_list = convert_csv_to_json_arr(filename)
-
-    # convert to json format
-    json_viewer = JsonMouseViewer()
-    try:
-        mouse_controller_g.create_mouse(json_viewer.transform(mouse_list))
-        return Response(status=status.HTTP_200_OK)
-    except:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+    return error_msg
