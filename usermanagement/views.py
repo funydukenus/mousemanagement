@@ -281,20 +281,7 @@ def low_level_send_email(sender_email, receiver_email, title, content):
             return Response(status=status.HTTP_401_UNAUTHORIZED)
     except Exception as e:
         return Response(status=e.message)
-    # We will not using gmail services
-    # message = MIMEMultipart()
-    # message['From'] = sender_email
-    # message['To'] = receiver_email
-    # message['Subject'] = title  # The subject line
-    # # The body and the attachments for the mail
-    # message.attach(MIMEText(content, 'plain'))
-    # # Create SMTP session for sending the mail
-    # session = smtplib.SMTP('smtp.gmail.com', 587)  # use gmail with port
-    # session.starttls()  # enable security
-    # session.login(sender_email, password)  # login with mail_id and password
-    # text = message.as_string()
-    # session.sendmail(sender_email, receiver_email, text)
-    # session.quit()
+
 
 @api_view(['POST'])
 def email_test(request):
