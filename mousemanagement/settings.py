@@ -67,7 +67,7 @@ So basically, for cross site cookies,
 4. CORS Origin Allow All origin
 """
 CORS_ALLOW_CREDENTIALS = True
-if not DEBUG:
+if DEBUG:
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = 'None'
 CORS_ORIGIN_ALLOW_ALL = True
