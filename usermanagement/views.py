@@ -29,6 +29,8 @@ def user_login(request):
             login(request, user)
             try:
                 user = User.objects.get(id=user.id)
+                user.userextend.is_logged_in_verified = True
+                user.save()
                 user_viewer = JsonUserViewer()
 
                 return Response(user_viewer.transform(user), status=status.HTTP_200_OK)
