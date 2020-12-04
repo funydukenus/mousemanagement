@@ -1,12 +1,13 @@
 from django.contrib.auth.models import User
-from django.db import DatabaseError
+from django.db import DatabaseError, transaction
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from usermanagement.views import get_random_alphanumeric_string
+from usermanagement.views import get_random_alphanumeric_string, check_if_user_is_logged, get_response_frame_data, \
+    return_response
 from .mvc_model.Error import DuplicationMouseError, MouseNotFoundError
-from .mvc_model.model import Mouse, AdvancedRecord, Record, MouseList
+from .mvc_model.model import Mouse, AdvancedRecord, Record
 from django import forms
 from datetime import datetime
 import pandas as pd
@@ -33,19 +34,6 @@ class UploadFileForm(forms.Form):
     file = forms.FileField()
 
 
-def _check_if_user_is_login(session):
-    try:
-        user = User.objects.get(username=session['username'])
-        if user.is_active and user.is_authenticated and user.is_staff:
-            return True
-        else:
-            return False
-    except User.DoesNotExist:
-        return False
-    except KeyError:
-        return False
-
-
 # With api view wrapper, method validation is auto-checked
 # wrong API request will auto return Unathorized method
 @api_view(['GET'])
@@ -54,38 +42,44 @@ def harvested_mouse_list(request):
     List all the harvested mouse
     { 'filter': '[column_name_1]@[value_1]@[filter_option_1]$[column_name_2][value_2][filter_option_2]' }
     """
-    # if not _check_if_user_is_login(request.session):
-    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
+    user = check_if_user_is_logged(request)
+    response_frame = get_response_frame_data()
+    response_success = False
 
-    option_found = False
-    fitler_options = None
-    if len(request.query_params) != 0:
-        option_found = True
+    if user is not None:
+        option_found = False
+        filter_options = None
+        if len(request.query_params) != 0:
+            option_found = True
 
-    if option_found:
-        if 'filter' in request.query_params.keys():
-            option_filter_str = request.query_params['filter']
-            split_filter_options = option_filter_str.split('$')
-            fitler_options = []
-            if isinstance(split_filter_options, list):
+        if option_found:
+            if 'filter' in request.query_params.keys():
+                option_filter_str = request.query_params['filter']
+                split_filter_options = option_filter_str.split('$')
+                fitler_options = []
+                if isinstance(split_filter_options, list):
 
-                for filter_o in split_filter_options:
-                    split_detailed_option = filter_o.split('@')
+                    for filter_o in split_filter_options:
+                        split_detailed_option = filter_o.split('@')
 
-                    filter_option = FilterOption(
-                        column_name=split_detailed_option[0],
-                        value=split_detailed_option[1]
-                    )
-                    try:
-                        filter_option.filter_type = get_enum_by_value(int(split_detailed_option[2]))
-                    except IndexError:
-                        pass
+                        filter_option = FilterOption(
+                            column_name=split_detailed_option[0],
+                            value=split_detailed_option[1]
+                        )
+                        try:
+                            filter_option.filter_type = get_enum_by_value(int(split_detailed_option[2]))
+                        except IndexError:
+                            pass
 
-                    fitler_options.append(filter_option)
+                        fitler_options.append(filter_option)
 
-    mouse_list = mouse_controller_g.get_mouse_for_transfer(filter_option=fitler_options)
+        mouse_list = mouse_controller_g.get_mouse_for_transfer(filter_option=filter_options)
+        response_success = True
+        payload = mouse_list
+    else:
+        payload = "Authorization failed"
 
-    return Response(mouse_list)
+    return return_response(response_frame, response_success, payload)
 
 
 @api_view(['GET'])
@@ -96,41 +90,46 @@ def harvested_mouse_force_list(request):
     by Json
     { 'filter': '[column_name_1]@[value_1]@[filter_option_1]$[column_name_2][value_2][filter_option_2]' }
     """
-    # if not _check_if_user_is_login(request.session):
-    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
+    user = check_if_user_is_logged(request)
+    response_frame = get_response_frame_data()
+    response_success = False
 
-    # if not _check_if_user_is_login(request.session):
-    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
+    if user is not None:
+        option_found = False
+        filter_options = None
+        if len(request.query_params) != 0:
+            option_found = True
 
-    option_found = False
-    fitler_options = None
-    if len(request.query_params) != 0:
-        option_found = True
+        if option_found:
+            if 'filter' in request.query_params.keys():
+                option_filter_str = request.query_params['filter']
+                split_filter_options = option_filter_str.split('$')
+                fitler_options = []
+                if isinstance(split_filter_options, list):
 
-    if option_found:
-        if 'filter' in request.query_params.keys():
-            option_filter_str = request.query_params['filter']
-            split_filter_options = option_filter_str.split('$')
-            fitler_options = []
-            if isinstance(split_filter_options, list):
+                    for filter_o in split_filter_options:
+                        split_detailed_option = filter_o.split('@')
 
-                for filter_o in split_filter_options:
-                    split_detailed_option = filter_o.split('@')
+                        filter_option = FilterOption(
+                            column_name=split_detailed_option[0],
+                            value=split_detailed_option[1]
+                        )
+                        try:
+                            filter_option.filter_type = get_enum_by_value(int(split_detailed_option[2]))
+                        except IndexError:
+                            pass
 
-                    filter_option = FilterOption(
-                        column_name=split_detailed_option[0],
-                        value=split_detailed_option[1]
-                    )
-                    try:
-                        filter_option.filter_type = get_enum_by_value(int(split_detailed_option[2]))
-                    except IndexError:
-                        pass
+                        fitler_options.append(filter_option)
+        try:
+            mouse_list = mouse_controller_g.get_mouse_for_transfer(force=True, filter_option=filter_options)
+            response_success = True
+            payload = mouse_list
+        except Exception as err:
+            payload = "Unknown database error"
+    else:
+        payload = "Authorization failed"
 
-                    fitler_options.append(filter_option)
-
-    mouse_list = mouse_controller_g.get_mouse_for_transfer(force=True, filter_option=fitler_options)
-
-    return Response(mouse_list)
+    return return_response(response_frame, response_success, payload)
 
 
 @api_view(['POST'])
@@ -138,9 +137,6 @@ def harvested_mouse_insertion(request):
     """
     Insertion of the harvested mouse into database
     """
-    # if not _check_if_user_is_login(request.session):
-    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
-
     try:
         mouse_controller_g.create_mouse(request.data)
         return Response(status=status.HTTP_201_CREATED)
@@ -159,16 +155,21 @@ def harvested_mouse_update(request):
     """
     # if not _check_if_user_is_login(request.session):
     #    return Response(status=status.HTTP_401_UNAUTHORIZED)
+    response_frame = get_response_frame_data()
+    response_success = False
+    payload = ""
 
     try:
         mouse_controller_g.update_mouse(request.data)
-        return Response(status=status.HTTP_200_OK)
-    except MouseNotFoundError as e:
-        return Response(data=e, status=status.HTTP_200_OK)
-    except ValueError as e:
-        return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
-    except DatabaseError as e:
-        return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
+        response_success = True
+    except MouseNotFoundError:
+        payload = "Target mouse is not found"
+    except ValueError:
+        payload = "Unknown database error"
+    except DatabaseError:
+        payload = "Unknown database error"
+
+    return return_response(response_frame, response_success, payload)
 
 
 @api_view(['DELETE'])
@@ -176,43 +177,21 @@ def harvested_mouse_delete(request):
     """
     Delete of the selected harvested mouse
     """
-    # if not _check_if_user_is_login(request.session):
-    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
+    response_frame = get_response_frame_data()
+    response_success = False
+    payload = ""
 
     try:
         mouse_controller_g.delete_mouse(request.data)
-        return Response(status=status.HTTP_200_OK)
+        response_success = True
     except MouseNotFoundError as e:
-        return Response(data=e, status=status.HTTP_200_OK)
+        payload = "Target mouse is not found"
     except ValueError as e:
-        return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
+        payload = "Unknown database error"
     except DatabaseError as e:
-        return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
+        payload = "Unknown database error"
 
-
-@api_view(['DELETE'])
-def harvested_all_mouse_delete(request):
-    """
-    Deletion of the harvested mouse into database
-    """
-    """
-    Delete of the selected harvested mouse
-    """
-    # if not _check_if_user_is_login(request.session):
-    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
-
-    try:
-        mouse_list_in_xml = mouse_controller_g.get_mouse_for_transfer(force=True)
-        mouse_controller_g.delete_mouse(mouse_list_in_xml)
-    except ValueError as e:
-        return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
-    except DatabaseError as e:
-        return Response(data='DB Error', status=status.HTTP_400_BAD_REQUEST)
-
-    if mouse_controller_g.get_num_total_mouse() == 0:
-        return Response(status=status.HTTP_200_OK)
-    else:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+    return return_response(response_frame, response_success, payload)
 
 
 @api_view(['GET'])
@@ -220,33 +199,44 @@ def get_data_option_list(request):
     """
     Providing the selecting option to the client
     """
-    # if not _check_if_user_is_login(request.session):
-    #    return Response(status=status.HTTP_401_UNAUTHORIZED)
+    user = check_if_user_is_logged(request)
+    response_frame = get_response_frame_data()
+    response_success = False
 
-    # Get the list of mouse object first
-    harvesed_mouse_list = mouse_controller_g.get_mouse_for_transfer(transform=False)
-    mouseline_list = []
-    genotype_list = []
-    phenotype_list = []
-    projecttitle_list = []
-    handler_list = []
-    experiement_list = []
-    data = {}
+    if user is not None:
+        try:
+            # Get the list of mouse object first
+            harvesed_mouse_list = mouse_controller_g.get_mouse_for_transfer(transform=False)
+            mouseline_list = []
+            genotype_list = []
+            phenotype_list = []
+            project_title_list = []
+            handler_list = []
+            experiement_list = []
+            data = {}
 
-    for harvestedMouse in harvesed_mouse_list:
-        mouseline_list.append(harvestedMouse.mouseline)
-        genotype_list.append(harvestedMouse.genotype)
-        phenotype_list.append(harvestedMouse.phenotype)
-        projecttitle_list.append(harvestedMouse.project_title)
-        handler_list.append(harvestedMouse.handler)
+            for harvestedMouse in harvesed_mouse_list:
+                mouseline_list.append(harvestedMouse.mouseline)
+                genotype_list.append(harvestedMouse.genotype)
+                phenotype_list.append(harvestedMouse.phenotype)
+                project_title_list.append(harvestedMouse.project_title)
+                handler_list.append(harvestedMouse.handler)
+                experiement_list.append(harvestedMouse.experiment)
 
-    data['mouseLineList'] = list(set(mouseline_list))
-    data['genoTypeList'] = list(set(genotype_list))
-    data['phenoTypeList'] = list(set(phenotype_list))
-    data['projectTitleList'] = list(set(projecttitle_list))
-    data['handlerList'] = list(set(handler_list))
+            data['mouseLineList'] = list(set(mouseline_list))
+            data['genoTypeList'] = list(set(genotype_list))
+            data['phenoTypeList'] = list(set(phenotype_list))
+            data['projectTitleList'] = list(set(project_title_list))
+            data['handlerList'] = list(set(handler_list))
+            data['experiementList'] = list(set(experiement_list))
 
-    return Response(data)
+            response_success = True
+            payload = data
+        except Exception as error:
+            payload = "Unknown database error"
+    else:
+        payload = "Authorization failed"
+    return return_response(response_frame, response_success, payload)
 
 
 @api_view(['POST'])
@@ -255,63 +245,56 @@ def harvested_import_mouse(request):
     Handling of the process of importing external
     csv file for insertion of list of mouse
     """
-    try:
-        user_id = request.session['_auth_user_id']
+    user = check_if_user_is_logged(request)
+    response_frame = get_response_frame_data()
+    response_success = False
+    payload = ""
+    if user is not None:
         try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            filename = request.FILES['file'].name + get_random_alphanumeric_string(20, 20)
-            user.userextend.uploaded_file_name = save_uploaded_file(request.FILES['file'], filename)
-            user.save()
+            form = UploadFileForm(request.POST, request.FILES)
+            if form.is_valid():
+                filename = get_random_alphanumeric_string(20, 20) + request.FILES['file'].name
+                with transaction.atomic():
+                    user.userextend.uploaded_file_name = save_uploaded_file(request.FILES['file'], filename)
+                    user.save()
 
-            return Response(status=status.HTTP_200_OK)
-    except KeyError:
-        return Response(data="No session", status=status.HTTP_400_BAD_REQUEST)
+                # get again the user to double confirm
+                user = User.objects.get(id=user.id)
+                if user.userextend.uploaded_file_name == filename:
+                    response_success = True
+                else:
+                    payload = 'Unknown database error'
+            else:
+                payload = 'File missing in the form'
+        except Exception as error:
+            payload = 'Unknown database error'
+    else:
+        payload = "Authorization failed"
+
+    return return_response(response_frame, response_success, payload)
 
 
 @api_view(['POST'])
 def parsing_imported_mouse(request):
-    try:
-        user_id = request.session['_auth_user_id']
-        try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
-
+    user = check_if_user_is_logged(request)
+    response_frame = get_response_frame_data()
+    response_success = False
+    payload = ""
+    if user is not None:
         # Get the last saved filed
         filename = user.userextend.uploaded_file_name
         csv_file = pd.read_csv(filename)
         csv_file = csv_file.fillna('No Data')
-
-        data = { 'error_msg': convert_csv_to_json_arr(csv_file) }
+        payload = convert_csv_to_json_arr(csv_file)
 
         if os.path.exists(filename):
             os.remove(filename)
 
-        return Response(data=data, status=status.HTTP_200_OK)
-    except KeyError:
-        return Response(data="No session", status=status.HTTP_400_BAD_REQUEST)
+        response_success = True
+    else:
+        payload = "Authorization failed"
 
-
-@api_view(['GET'])
-def gets_mouse_csv_info(request):
-    try:
-        user_id = request.session['_auth_user_id']
-        try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
-
-        # Get the last saved filed
-        filename = user.userextend.uploaded_file_name
-        csv_file = pd.read_csv(filename)
-
-        return Response(data=len(csv_file), status=status.HTTP_200_OK)
-    except KeyError:
-        return Response(data="No session", status=status.HTTP_400_BAD_REQUEST)
+    return return_response(response_frame, response_success, payload)
 
 
 # Helper

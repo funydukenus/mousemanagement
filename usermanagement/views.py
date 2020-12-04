@@ -1,5 +1,8 @@
+import distutils
+
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.db import transaction
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -16,72 +19,58 @@ from sendgrid.helpers.mail import Mail
 
 @api_view(['POST'])
 def user_login(request):
-    try:
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
+    user_viewer = JsonUserViewer()
+    response_frame = get_response_frame_data()
+    response_success = False
+    # Check if all the required fields are provided
+    required_fields = {'username', 'password'}
+
+    if request.POST.keys() >= required_fields:
+        user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
+
+        # if user is found and currently marked as active
         if user is not None and user.is_active:
+            # Login the user
             login(request, user)
-            try:
-                user = User.objects.get(id=user.id)
+
+            # Mark user as logged
+            # Using atomic transaction in case something happen
+            with transaction.atomic():
                 user.userextend.is_logged_in_verified = True
                 user.save()
-                user_viewer = JsonUserViewer()
 
-                return Response(user_viewer.transform(user), status=status.HTTP_200_OK)
-            except User.DoesNotExist:
-                return Response(data="User not found", status=status.HTTP_200_OK)
+            # Check if the user has been modified
+            # Using the same id to retrieve the user
+            # We has checked the user existed in the above condition
+            # not require to check again here
+            user = User.objects.get(id=user.id)
+            if user.userextend.is_logged_in_verified:
+                # User has logged in, no error from the db
+                response_success = True
+                payload = user_viewer.transform(user)
+            else:
+                payload = 'Unknown database error'
         else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
-    except KeyError:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+            payload = 'Authentication failed'
+    else:
+        payload = 'Username or password not given'
+
+    return return_response(response_frame, response_success, payload)
 
 
 @api_view(['GET'])
 def user_logout(request):
-    try:
-        user_id = request.session['_auth_user_id']
-        user = User.objects.get(id=user_id)
+    user = check_if_user_is_logged(request)
+    response_frame = get_response_frame_data()
+    # Check if there's user found
+    if user is not None:
         user.userextend.is_logged_in_verified = False
         user.save()
         logout(request)
-        return Response(status=status.HTTP_200_OK)
-    except KeyError:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
-@api_view(['POST'])
-def user_create(request):
-    # First check if the user has login into the system
-    try:
-        username = request.POST['username']
-        password = request.POST['password']
-        email = request.POST['email']
-
-        firstname = request.POST['firstname']
-        lastname = request.POST['lastname']
-        try:
-            User.objects.get(username=username)
-            return Response(status=status.HTTP_302_FOUND)
-        except User.DoesNotExist:
-            # if user is not exist, we are allow to
-            # create the user
-            try:
-                User.objects.get(email=email)
-                return Response(status=status.HTTP_302_FOUND)
-            except User.DoesNotExist:
-                _internal_create_user(
-                    username=username,
-                    password=password,
-                    email=email,
-                    firstname = firstname,
-                    lastname = lastname
-                )
-                return Response(status=status.HTTP_201_CREATED)
-    except KeyError:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        set_success_response_frame_with_payload(response_frame, "Log out success")
+    else:
+        set_failed_response_frame_with_payload(response_frame, "User not found")
+    return Response(response_frame, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -119,17 +108,239 @@ def user_change_password(request):
 
 
 @api_view(['POST'])
-def is_user_table_empty(request):
-    try:
-        num = User.objects.all().count()
-        if num == 0:
-            return Response(status=status.HTTP_200_OK)
+def create_inactive_user(request):
+    user = check_if_user_is_logged(request)
+    response_frame = get_response_frame_data()
+
+    response_success = False
+
+    # Check if all the required fields are provided
+    required_fields = {'username', 'email', 'firstname', 'lastname'}
+
+    if user is not None:
+        if request.POST.keys() >= required_fields:
+            username = request.POST['username']
+            password = get_random_alphanumeric_string(20, 20)
+            email = request.POST['email']
+            firstname = request.POST['firstname']
+            lastname = request.POST['lastname']
+
+            # if username or email existed in the database
+            # we are not allowed to create the user
+            matched_username_count = User.objects.filter(username=username).count()
+            matched_email_count = User.objects.filter(email=email).count()
+            if matched_username_count == 0 and matched_email_count == 0:
+                if send_invitation_to_user(firstname, lastname, password, email, username):
+                    user = _internal_create_user(username=username, password=password, email=email, firstname=firstname,
+                                                 lastname=lastname)
+                    if user is not None:
+                        response_success = True
+                        payload = 'User created'
+                    else:
+                        payload = 'Unknown database error'
+                else:
+                    payload = 'Email Services not available'
+            else:
+                payload = 'Username or Email existed'
         else:
-            return Response(status=status.HTTP_302_FOUND)
-    except KeyError:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+            payload = 'Required field not met'
+    else:
+        payload = 'User not logged in'
+
+    return return_response(response_frame, response_success, payload)
 
 
+@api_view(['POST'])
+def check_secret_key(request):
+    response_frame = get_response_frame_data()
+
+    response_success = False
+    required_fields = {'username', 'secret_key'}
+    payload = ""
+
+    if check_required_field(request, required_fields):
+        username = request.POST['username']
+        secret_key = request.POST['secret_key']
+
+        user_count = User.objects.filter(username=username).count()
+
+        if not(user_count == 0):
+            user = User.objects.get(username=username)
+            # if the secret key matched with user password
+            # and user is inactive
+            if user.check_password(secret_key) and not user.is_active:
+                response_success = True
+
+    return return_response(response_frame, response_success, payload)
+
+
+@api_view(['POST'])
+def user_reset_new_pwd(request):
+    response_frame = get_response_frame_data()
+
+    response_success = False
+    required_fields = {'username', 'secret_key', 'password'}
+    payload = ""
+    if check_required_field(request, required_fields):
+        username = request.POST['username']
+        secret_key = request.POST['secret_key']
+        password = request.POST['password']
+
+        user_count = User.objects.filter(username=username).count()
+
+        if not(user_count == 0):
+            user = User.objects.get(username=username)
+            # if the secret key matched with user password
+            # and user is inactive
+            if user.check_password(secret_key) and not user.is_active:
+                with transaction.atomic():
+                    user.set_password(password)
+                    user.is_active = True
+                    user.userextend.is_email_verified = True
+                    user.save()
+
+                # Get again the user to verify
+                user = User.objects.get(username=username)
+                if user.check_password(password) and user.is_active and user.userextend.is_email_verified:
+                    response_success = True
+                else:
+                    payload = "Unknown database error"
+            else:
+                payload = "Secret key incorrect"
+        else:
+            payload = "Target user not created"
+    return return_response(response_frame, response_success, payload)
+
+
+@api_view(['GET'])
+def get_all_user_info(request):
+    user = check_if_user_is_logged(request)
+    response_frame = get_response_frame_data()
+
+    response_success = False
+
+    if user is not None:
+        if user.is_superuser and user.is_active and user.is_authenticated:
+            user_list = User.objects.all()
+            user_viewer = JsonUserViewer()
+            response_success = True
+            payload = user_viewer.transform(user_list)
+        else:
+            payload = 'Only admin allowed to see user info'
+    else:
+        payload = 'User not logged in'
+
+    return return_response(response_frame, response_success, payload)
+
+
+@api_view(['POST'])
+def toggle_activity_user(request):
+    super_user = check_if_user_is_logged(request)
+    response_frame = get_response_frame_data()
+
+    response_success = False
+    required_fields = {'username', 'is_active'}
+    if super_user is not None:
+        if check_required_field(request, required_fields):
+            username = request.POST['username']
+            is_user_active_aft_change = bool(distutils.util.strtobool(request.POST['is_active'].capitalize()))
+
+            if super_user.is_superuser and super_user.is_active and super_user.is_authenticated:
+                user_count = User.objects.filter(username=username).count()
+
+                if not(user_count == 0):
+                    user = User.objects.get(username=username)
+
+                    if not(user.id == super_user.id):
+                        with transaction.atomic():
+                            user.is_active = is_user_active_aft_change
+                            user.save()
+
+                        # Get again the user to check if it has toggled
+                        user = User.objects.get(username=username)
+                        if user.is_active == is_user_active_aft_change:
+                            response_success = True
+                            payload = ""
+                        else:
+                            payload = "Unknown database Error"
+                    else:
+                        payload = "You cannot change yourself"
+                else:
+                    payload = "Target user not found"
+            else:
+                payload = 'Only admin allowed to see user info'
+        else:
+            payload = 'Required field not met'
+    else:
+        payload = 'User not logged in'
+
+    return return_response(response_frame, response_success, payload)
+
+
+@api_view(['POST'])
+def delete_user(request):
+    super_user = check_if_user_is_logged(request)
+    response_frame = get_response_frame_data()
+
+    response_success = False
+    required_fields = {'username'}
+
+    if super_user is not None:
+        if check_required_field(request, required_fields):
+            username = request.POST['username']
+            if super_user.is_superuser and super_user.is_active and super_user.is_authenticated:
+                user_count = User.objects.filter(username=username).count()
+                if not (user_count == 0):
+                    user = User.objects.get(username=username)
+                    if not (user.id == super_user.id):
+                        with transaction.atomic():
+                            user.delete()
+                        user_count = User.objects.filter(username=username).count()
+
+                        if user_count == 0:
+                            response_success = True
+                            payload = "User successfully deleted"
+                        else:
+                            payload = "Unknown database error"
+                    else:
+                        payload = "You cannot delete yourself"
+                else:
+                    payload = "Target user not found in database"
+            else:
+                payload = "Only Admin can delete user"
+        else:
+            payload = 'Required field not met'
+    else:
+        payload = 'User not logged in'
+
+    return return_response(response_frame, response_success, payload)
+
+
+@api_view(['GET'])
+def get_logged_user_info(request):
+    """
+    This is the function getting the logged user info
+    Return the Json Object
+    {"result": [is_logged], "User": user}
+    """
+    user = check_if_user_is_logged(request)
+    response_frame = get_response_frame_data()
+    response_success = False
+
+    # Check if there's user found
+    if user is not None:
+        user_viewer = JsonUserViewer()
+        payload = user_viewer.transform(user)
+        response_success = True
+    else:
+        payload = "User not found"
+
+    return return_response(response_frame, response_success, payload)
+
+
+#########################################################
+# Backdoor only interface
+#########################################################
 @api_view(['POST'])
 def create_super_user(request):
     try:
@@ -161,74 +372,6 @@ def create_super_user(request):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
-def _internal_create_user(username, password, email, firstname, lastname, is_super_user=False, is_active=False, is_email_verified=False):
-    user = User.objects.create_user(
-        username=username,
-        password=password,
-        email=email,
-        first_name=firstname,
-        last_name=lastname
-    )
-    user.is_staff = True
-    user.is_active = is_active
-    user.is_admin = is_super_user
-    user.is_superuser = is_super_user
-    user.userextend.is_email_verified = is_email_verified
-    user.save()
-
-    return user
-
-
-@api_view(['GET'])
-def hand_checking(request):
-    return Response(status=status.HTTP_200_OK)
-
-
-def _check_if_user_is_login(username):
-    """
-    Check if the user has logged in
-    """
-    try:
-        user = User.objects.get(username=username)
-        if user.is_active and user.is_authenticated and user.is_staff:
-            return True
-        else:
-            return False
-    except User.DoesNotExist:
-        return False
-    except KeyError:
-        return False
-
-
-@api_view(['POST'])
-def is_login(request):
-    try:
-        user_id = request.session['_auth_user_id']
-        user = User.objects.get(id=user_id)
-        if user.is_authenticated and user.userextend.is_logged_in_verified:
-            return Response(status=status.HTTP_200_OK)
-        else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
-    except KeyError:
-        key_str = ""
-        for k in request.session.keys():
-            key_str += " " + k
-        return Response(data=key_str, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-def is_admin(request):
-    try:
-        user_id = request.session['_auth_user_id']
-        user = User.objects.get(id=user_id)
-        if user.is_authenticated and user.is_superuser:
-            return Response(data="1", status=status.HTTP_200_OK)
-        else:
-            return Response(data="0", status=status.HTTP_200_OK)
-    except KeyError:
-        return Response(data="0", status=status.HTTP_400_BAD_REQUEST)
-
-
 @api_view(['GET'])
 def clear_all_user(request):
     try:
@@ -236,6 +379,18 @@ def clear_all_user(request):
         return Response(status=status.HTTP_200_OK)
     except TypeError:
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def hand_checking(request):
+    return Response(status=status.HTTP_200_OK)
+
+
+#########################################################
+# Helper function
+#########################################################
+def check_required_field(request, required_field):
+    return request.POST.keys() >= required_field
 
 
 def get_random_alphanumeric_string(letters_count, digits_count):
@@ -252,6 +407,99 @@ def get_random_alphanumeric_string(letters_count, digits_count):
     return final_string
 
 
+def _internal_create_user(username, password, email, firstname, lastname, is_super_user=False, is_active=False,
+                          is_email_verified=False):
+    with transaction.atomic():
+        user = User.objects.create_user(
+            username=username,
+            password=password,
+            email=email,
+            first_name=firstname,
+            last_name=lastname
+        )
+        user.is_staff = True
+        user.is_active = is_active
+        user.is_admin = is_super_user
+        user.is_superuser = is_super_user
+        user.userextend.is_email_verified = is_email_verified
+        user.save()
+
+        user_count = User.objects.filter(id=user.id)
+
+        if user_count == 0:
+            user = None
+
+    return user
+
+
+def check_if_user_is_logged(request):
+    """
+    This helper function checks the incoming request
+    contains the current session
+    If so, use the id stored in the session to find
+    the user from the db.
+    If found, return the user
+    """
+    # Check if the session exists for the current requested user
+    if '_auth_user_id' in request.session:
+        # if the user id existsed in the session
+        # Try use that to get the user info from db
+        user_id = request.session['_auth_user_id']
+        user_count = User.objects.filter(id=user_id).count()
+
+        if user_count == 0:
+            return None
+        else:
+            user = User.objects.get(id=user_id)
+            return user
+    else:
+        return None
+
+
+def get_response_frame_data():
+    """
+    This function simple creates
+    the response data frame for response
+    """
+    response_frame = {
+        "result": 0,
+        "payload": ""
+    }
+
+    return response_frame
+
+
+def set_response_success(response_frame):
+    response_frame['result'] = 1
+
+
+def set_response_failed(response_frame):
+    response_frame['result'] = 0
+
+
+def set_response_payload(response_frame, payload):
+    response_frame['payload'] = payload
+
+
+def set_success_response_frame_with_payload(response_frame, payload):
+    set_response_success(response_frame)
+    set_response_payload(response_frame, payload)
+
+
+def set_failed_response_frame_with_payload(response_frame, payload):
+    set_response_failed(response_frame)
+    set_response_payload(response_frame, payload)
+
+
+def return_response(response_frame, response_success, payload=""):
+    if response_success:
+        set_success_response_frame_with_payload(response_frame, payload)
+    else:
+        set_failed_response_frame_with_payload(response_frame, payload)
+
+    return Response(response_frame, status=status.HTTP_200_OK)
+
+
 def verify_super_user_email(email, password):
     # if email failed try the below 2,
     # 1. You need to allow less secure apps, you can do it by click below link
@@ -265,7 +513,6 @@ def verify_super_user_email(email, password):
 
 
 def low_level_send_email(sender_email, receiver_email, title, content):
-
     # Using SendGrid services as email relay
     message = Mail(
         from_email=sender_email,
@@ -283,39 +530,16 @@ def low_level_send_email(sender_email, receiver_email, title, content):
         return Response(status=e.message)
 
 
-@api_view(['POST'])
-def email_test(request):
-    title = request.POST['title']
-    content = request.POST['content']
-    receiver_email = "chenyuhang01@gmail.com"
-
-    message = Mail(
-        from_email='fny.duke.nus@gmail.com',
-        to_emails=receiver_email,
-        subject=title,
-        html_content=content)
-    try:
-        sg = SendGridAPIClient(SEND_GRID_API_KEY)
-        response = sg.send(message)
-        if response.status_code == 202:
-            return Response(status=status.HTTP_200_OK)
-        else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
-    except Exception as e:
-        return Response(status=e.message)
-
-    # return send_email(title, content, password, receiver_email)
-
-
 def send_invitation_to_user(firstname, lastname, generated_password, receiver_email, username):
     if DEBUG:
         front_end_url = "http://localhost:4200"
     else:
         front_end_url = "https://mousemanagementsite.herokuapp.com"
     title = "Hello from Mouse Management Committee"
-    content = '<h2>Hello ' + lastname + ' ' + firstname + '</h2>'\
-              '<p>Your user account has been created by Admin</p>'\
-              '<p>Please Click the following link to update the password:</p><p>' +\
+    content = '<h2>Hello ' + lastname + ' ' + firstname + '</h2>' \
+                                                          '<p>Your user account has been created by Admin</p>' \
+                                                          '<p>Please Click the following link to update the ' \
+                                                          'password:</p><p>' + \
               front_end_url + '/update-pwd-new-user?secret_key=' + generated_password + \
               '&username=' + username + \
               '</p><br /><p>Regards</p>'
@@ -344,176 +568,3 @@ def send_email(title, content, receiver_email):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     except User.DoesNotExist:
         return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-def create_inactive_user(request):
-    try:
-        username = request.POST['username']
-        # Generate a random default password for the user
-        password = get_random_alphanumeric_string(20, 20)
-        email = request.POST['email']
-        firstname = request.POST['firstname']
-        lastname = request.POST['lastname']
-
-        try:
-            User.objects.get(username=username)
-            return Response(data="User existed", status=status.HTTP_302_FOUND)
-        except User.DoesNotExist:
-            try:
-                User.objects.get(email=email)
-                return Response(data="Email has been registered", status=status.HTTP_302_FOUND)
-            except User.DoesNotExist:
-                if send_invitation_to_user(firstname, lastname, password, email, username):
-                    # if user is not exist, we are allow to
-                    # create the user
-                    _internal_create_user(
-                        username=username,
-                        password=password,
-                        email=email,
-                        firstname=firstname,
-                        lastname=lastname
-                    )
-                    return Response(data="Success", status=status.HTTP_201_CREATED)
-                else:
-                    return Response(data="Email service not available", status=status.HTTP_400_BAD_REQUEST)
-    except KeyError:
-        return Response(data="You are not allowed to create user", status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-def check_secret_key(request):
-    try:
-        username = request.POST['username']
-        secret_key = request.POST['secret_key']
-        try:
-            user = User.objects.get(username=username)
-            if not user.check_password(secret_key) or user.is_active:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-
-            return Response(status=status.HTTP_200_OK)
-
-        except User.DoesNotExist:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-    except KeyError:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-def user_reset_new_pwd(request):
-    try:
-        username = request.POST['username']
-        secret_key = request.POST['secret_key']
-        password = request.POST['password']
-        try:
-            user = User.objects.get(username=username)
-            if not (user.check_password(secret_key) or user.is_active):
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-
-            user.set_password(password)
-            user.is_active = True
-            user.userextend.is_email_verified = True
-            user.save()
-
-            return Response(status=status.HTTP_200_OK)
-
-        except User.DoesNotExist:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-    except KeyError:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET'])
-def get_all_user_info(request):
-    try:
-        user_id = request.session['_auth_user_id']
-        try:
-            user = User.objects.get(id=user_id)
-
-            if user.is_superuser and user.is_active and user.is_authenticated:
-                user_list = User.objects.all()
-                user_viewer = JsonUserViewer()
-
-                return Response(user_viewer.transform(user_list))
-            else:
-                return Response(status=status.HTTP_401_UNAUTHORIZED)
-        except User.DoesNotExist:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-    except KeyError:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-def toggle_activity_user(request):
-    try:
-        user_id = request.session['_auth_user_id']
-        username = request.POST['username']
-        is_user_active_aft_change = request.POST['is_active']
-
-        if is_user_active_aft_change == 'false':
-            is_user_active_aft_change = False
-        else:
-            is_user_active_aft_change = True
-
-        try:
-            super_user = User.objects.get(id=user_id)
-
-            if super_user.is_superuser and super_user.is_active and super_user.is_authenticated:
-                user = User.objects.get(username=username)
-
-                # Only can toggle the user with email verified
-                if not(user.id == super_user.id and user.userextend.is_email_verified):
-                    user.is_active = is_user_active_aft_change
-                    user.save()
-                    return Response(data="Success", status=status.HTTP_200_OK)
-                else:
-                    return Response(data="You cannot change yourself", status=status.HTTP_200_OK)
-            else:
-                return Response(status=status.HTTP_401_UNAUTHORIZED)
-        except User.DoesNotExist:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-    except KeyError:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-def delete_user(request):
-    try:
-        user_id = request.session['_auth_user_id']
-        username = request.POST['username']
-
-        try:
-            super_user = User.objects.get(id=user_id)
-
-            if super_user.is_superuser and super_user.is_active and super_user.is_authenticated:
-                user = User.objects.get(username=username)
-
-                # Only can toggle the user with email verified
-                if not(user.id == super_user.id):
-                    user.delete()
-                    return Response(data="Success", status=status.HTTP_200_OK)
-                else:
-                    return Response(data="You cannot delete yourself", status=status.HTTP_200_OK)
-            else:
-                return Response(status=status.HTTP_401_UNAUTHORIZED)
-        except User.DoesNotExist:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-    except KeyError:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET'])
-def get_logged_user_info(request):
-    try:
-        user_id = request.session['_auth_user_id']
-        try:
-            user = User.objects.get(id=user_id)
-            user_viewer = JsonUserViewer()
-
-            return Response(user_viewer.transform(user), status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response(data="User not found", status=status.HTTP_200_OK)
-    except KeyError:
-        return Response(data="Not logged",status=status.HTTP_200_OK)
