@@ -34,56 +34,8 @@ class UploadFileForm(forms.Form):
     file = forms.FileField()
 
 
-# With api view wrapper, method validation is auto-checked
-# wrong API request will auto return Unathorized method
 @api_view(['GET'])
-def harvested_mouse_list(request):
-    """
-    List all the harvested mouse
-    { 'filter': '[column_name_1]@[value_1]@[filter_option_1]$[column_name_2][value_2][filter_option_2]' }
-    """
-    user = check_if_user_is_logged(request)
-    response_frame = get_response_frame_data()
-    response_success = False
-
-    if user is not None:
-        option_found = False
-        filter_options = None
-        if len(request.query_params) != 0:
-            option_found = True
-
-        if option_found:
-            if 'filter' in request.query_params.keys():
-                option_filter_str = request.query_params['filter']
-                split_filter_options = option_filter_str.split('$')
-                fitler_options = []
-                if isinstance(split_filter_options, list):
-
-                    for filter_o in split_filter_options:
-                        split_detailed_option = filter_o.split('@')
-
-                        filter_option = FilterOption(
-                            column_name=split_detailed_option[0],
-                            value=split_detailed_option[1]
-                        )
-                        try:
-                            filter_option.filter_type = get_enum_by_value(int(split_detailed_option[2]))
-                        except IndexError:
-                            pass
-
-                        fitler_options.append(filter_option)
-
-        mouse_list = mouse_controller_g.get_mouse_for_transfer(filter_option=filter_options)
-        response_success = True
-        payload = mouse_list
-    else:
-        payload = "Authorization failed"
-
-    return return_response(response_frame, response_success, payload)
-
-
-@api_view(['GET'])
-def harvested_mouse_force_list(request):
+def harvested_mouse_get_total_num(request):
     """
     List all the harvested mouse
     Filtered option:
@@ -94,6 +46,7 @@ def harvested_mouse_force_list(request):
     response_frame = get_response_frame_data()
     response_success = False
 
+    params_key = {'filter'}
     if user is not None:
         option_found = False
         filter_options = None
@@ -101,7 +54,7 @@ def harvested_mouse_force_list(request):
             option_found = True
 
         if option_found:
-            if 'filter' in request.query_params.keys():
+            if request.query_params.keys() >= params_key:
                 option_filter_str = request.query_params['filter']
                 split_filter_options = option_filter_str.split('$')
                 fitler_options = []
@@ -121,7 +74,63 @@ def harvested_mouse_force_list(request):
 
                         fitler_options.append(filter_option)
         try:
-            mouse_list = mouse_controller_g.get_mouse_for_transfer(force=True, filter_option=filter_options)
+            mouse_list_size = mouse_controller_g.get_mouse_for_transfer(force=True, filter_option=fitler_options, get_num=True)
+            response_success = True
+            payload = mouse_list_size
+        except Exception as err:
+            payload = "Unknown database error"
+    else:
+        payload = "Authorization failed"
+
+    return return_response(response_frame, response_success, payload)
+
+@api_view(['GET'])
+def harvested_mouse_force_list(request):
+    """
+    List all the harvested mouse
+    Filtered option:
+    by Json
+    { 'filter': '[column_name_1]@[value_1]@[filter_option_1]$[column_name_2][value_2][filter_option_2]' }
+    """
+    user = check_if_user_is_logged(request)
+    response_frame = get_response_frame_data()
+    response_success = False
+
+    params_key = {'filter'}
+    params_key_for_pagination = {'page_index', 'page_size'}
+    if user is not None:
+        option_found = False
+        filter_options = None
+        if len(request.query_params) != 0:
+            option_found = True
+
+        if option_found:
+            if request.query_params.keys() >= params_key:
+                option_filter_str = request.query_params['filter']
+                split_filter_options = option_filter_str.split('$')
+                fitler_options = []
+                if isinstance(split_filter_options, list):
+
+                    for filter_o in split_filter_options:
+                        split_detailed_option = filter_o.split('@')
+
+                        filter_option = FilterOption(
+                            column_name=split_detailed_option[0],
+                            value=split_detailed_option[1]
+                        )
+                        try:
+                            filter_option.filter_type = get_enum_by_value(int(split_detailed_option[2]))
+                        except IndexError:
+                            pass
+
+                        fitler_options.append(filter_option)
+        try:
+            if request.query_params.keys() >= params_key_for_pagination:
+                page_size = int(request.query_params['page_size'])
+                page_index = int(request.query_params['page_index'])
+                mouse_list = mouse_controller_g.get_mouse_for_transfer(force=True, filter_option=fitler_options, use_paginator=True, page_size=page_size, page_index=page_index)
+            else:
+                mouse_list = mouse_controller_g.get_mouse_for_transfer(force=True, filter_option=fitler_options)
             response_success = True
             payload = mouse_list
         except Exception as err:

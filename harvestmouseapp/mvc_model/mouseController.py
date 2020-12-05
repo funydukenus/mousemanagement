@@ -59,7 +59,7 @@ class MouseController:
         converted_data = self._model_adapter.transform(raw_data)
         return self._db_adapter.update_mouse(converted_data)
 
-    def get_mouse_for_transfer(self, filter_option=None, force=False, transform=True):
+    def get_mouse_for_transfer(self, filter_option=None, force=False, transform=True, get_num=False, use_paginator=False, page_size=0, page_index=0):
         """
         Physical id can be None, string object or list object
         if raw_data is None, get full list of mouse
@@ -77,10 +77,18 @@ class MouseController:
                 # and transforms to target format
             if isinstance(filtered_moust_list, MouseList):
                 if len(filtered_moust_list) != 1:
-                    raw_return_data = self._mouse_viewer.transform(filtered_moust_list)
+                    if use_paginator:
+                        filtered_moust_list = filtered_moust_list.paginatate(page_size, page_index)
+                    if get_num:
+                        raw_return_data = filtered_moust_list.get_size()
+                    else:
+                        raw_return_data = self._mouse_viewer.transform(filtered_moust_list)
                 else:
                     mouse = filtered_moust_list[0]
-                    raw_return_data = self._mouse_viewer.transform(mouse)
+                    if get_num:
+                        raw_return_data = 1
+                    else:
+                        raw_return_data = self._mouse_viewer.transform(mouse)
             elif isinstance(filtered_moust_list, Mouse):
                 raw_return_data = self._mouse_viewer.transform(filtered_moust_list)
             else:

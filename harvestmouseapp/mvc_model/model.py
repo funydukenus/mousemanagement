@@ -5,6 +5,8 @@ to support the MVC model
 import datetime
 from enum import Enum
 
+from django.core.paginator import Paginator
+
 
 class ColumnList(Enum):
     header_name = '_Mouse__'
@@ -134,6 +136,15 @@ class MouseList:
     def get_size(self):
         #  get the size of the current moust list
         return len(self._mouse_list)
+
+    def paginatate(self, page_size, page_index):
+        if ((page_size+1) * page_index) > self.get_size():
+            return self._mouse_list
+        else:
+            pages = Paginator(self._mouse_list, page_size)
+            mouse_list = MouseList()
+            mouse_list.add_mouse(pages.page(page_index+1).object_list)
+            return mouse_list
 
     def clear(self):
         #  Reset the mouse list to empty
