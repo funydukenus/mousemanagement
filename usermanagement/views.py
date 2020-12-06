@@ -509,7 +509,7 @@ def verify_super_user_email(email, password):
     #    https://www.google.com/settings/security/lesssecureapps
     # 2. https://accounts.google.com/DisplayUnlockCaptcha
     session = smtplib.SMTP('smtp.gmail.com', 587)  # use gmail with port
-    session.starttls()  # enable security
+    # session.starttls()  # enable security
     session.login(email, password)  # login with mail_id and password
     session.quit()
     return True
