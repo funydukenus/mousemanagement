@@ -208,27 +208,23 @@ def get_data_option_list(request):
     """
     Providing the selecting option to the client
     """
-    user = check_if_user_is_logged(request)
     response_frame = get_response_frame_data()
     response_success = False
 
-    if user is not None:
-        try:
-            data = {}
-            # Get the list of mouse object first
-            data['mouseLineList'] = mouse_controller_g.get_distinct_data_list('mouseLine')
-            data['genoTypeList'] = mouse_controller_g.get_distinct_data_list('genoType')
-            data['phenoTypeList'] = mouse_controller_g.get_distinct_data_list('phenoType')
-            data['projectTitleList'] = mouse_controller_g.get_distinct_data_list('projectTitle')
-            data['handlerList'] = mouse_controller_g.get_distinct_data_list('handler')
-            data['experiementList'] = mouse_controller_g.get_distinct_data_list('experiment')
+    try:
+        data = {}
+        # Get the list of mouse object first
+        data['mouseLineList'] = mouse_controller_g.get_distinct_data_list('mouseLine')
+        data['genoTypeList'] = mouse_controller_g.get_distinct_data_list('genoType')
+        data['phenoTypeList'] = mouse_controller_g.get_distinct_data_list('phenoType')
+        data['projectTitleList'] = mouse_controller_g.get_distinct_data_list('projectTitle')
+        data['handlerList'] = mouse_controller_g.get_distinct_data_list('handler')
+        data['experiementList'] = mouse_controller_g.get_distinct_data_list('experiment')
 
-            response_success = True
-            payload = data
-        except Exception as error:
-            payload = "Unknown database error"
-    else:
-        payload = "Authorization failed"
+        response_success = True
+        payload = data
+    except Exception as error:
+        payload = "Unknown database error"
     return return_response(response_frame, response_success, payload)
 
 
