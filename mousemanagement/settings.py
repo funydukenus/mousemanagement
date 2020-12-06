@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'wtzs$+6_@w(u*+ol_zw^046#@r2e*fj!-1lu(**=whh#05xih2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # ALLOWED_HOSTS = ['mousemanagement.herokuapp.com', '127.0.0.1', '192.168.50.194']
 ALLOWED_HOSTS = ['*']
@@ -68,7 +68,7 @@ So basically, for cross site cookies,
 4. CORS Origin Allow All origin
 """
 CORS_ALLOW_CREDENTIALS = True
-if DEBUG:
+if not DEBUG:
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = 'None'
 CORS_ORIGIN_ALLOW_ALL = True
@@ -137,7 +137,7 @@ THis is the default setting which use of the file-method to store the db data
 """
 THis is use for unbench testing where django app connecting to local postgresql server using psycopg2
 """
-if not DEBUG:
+if DEBUG:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -197,3 +197,6 @@ django_heroku.settings(locals())
 
 # API KEY for Send Grid services
 SEND_GRID_API_KEY = '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'
+
+MAINTAINANCE_EMAIL = "chenyuhang01@gmail.com"
+MAINTAINANCE_SEND_GRID_API_KEY = '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'

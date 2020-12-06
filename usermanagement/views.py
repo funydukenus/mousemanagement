@@ -13,7 +13,7 @@ import random
 import string
 import smtplib
 from usermanagement.UserViewer import JsonUserViewer
-from mousemanagement.settings import DEBUG, SEND_GRID_API_KEY
+from mousemanagement.settings import DEBUG, SEND_GRID_API_KEY, MAINTAINANCE_EMAIL, MAINTAINANCE_SEND_GRID_API_KEY
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
@@ -110,30 +110,34 @@ def user_change_password(request):
 
 @api_view(['POST'])
 def create_inactive_user(request):
-    user = check_if_user_is_logged(request)
+
     response_frame = get_response_frame_data()
 
     response_success = False
 
     # Check if all the required fields are provided
-    required_fields = {'username', 'email', 'firstname', 'lastname'}
+    required_fields = {'username', 'email', 'firstname', 'lastname', 'for_admin'}
 
-    if user is not None:
-        if request.POST.keys() >= required_fields:
-            username = request.POST['username']
-            password = get_random_alphanumeric_string(20, 20)
-            email = request.POST['email']
-            firstname = request.POST['firstname']
-            lastname = request.POST['lastname']
+    if request.POST.keys() >= required_fields:
+        username = request.POST['username']
+        password = get_random_alphanumeric_string(20, 20)
+        email = request.POST['email']
+        firstname = request.POST['firstname']
+        lastname = request.POST['lastname']
+        for_admin = bool(util.strtobool(request.POST['for_admin'].capitalize()))
+
+        user = check_if_user_is_logged(request)
+
+        if user is not None or for_admin:
 
             # if username or email existed in the database
             # we are not allowed to create the user
             matched_username_count = User.objects.filter(username=username).count()
             matched_email_count = User.objects.filter(email=email).count()
             if matched_username_count == 0 and matched_email_count == 0:
-                if send_invitation_to_user(firstname, lastname, password, email, username):
+                if send_invitation_to_user(firstname, lastname, password, email, username, for_admin=for_admin):
                     user = _internal_create_user(username=username, password=password, email=email, firstname=firstname,
-                                                 lastname=lastname)
+                                                 lastname=lastname, is_super_user=for_admin)
                     if user is not None:
                         response_success = True
                         payload = 'User created'
@@ -144,9 +148,9 @@ def create_inactive_user(request):
             else:
                 payload = 'Username or Email existed'
         else:
-            payload = 'Required field not met'
+            payload = 'User not logged in'
     else:
-        payload = 'User not logged in'
+        payload = 'Required field not met'
 
     return return_response(response_frame, response_success, payload)
 
@@ -375,6 +379,19 @@ def create_super_user(request):
         data= "email: " + email + ", password:" + password
         return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
 
+
+@api_view(['GET'])
+def get_num_user(request):
+    response_frame = get_response_frame_data()
+    response_success = False
+    try:
+        payload = User.objects.all().count()
+        response_success = True
+    except Exception as err:
+        payload = err
+    return return_response(response_frame, response_success, payload)
+
+
 @api_view(['GET'])
 def clear_all_user(request):
     try:
@@ -509,13 +526,13 @@ def verify_super_user_email(email, password):
     #    https://www.google.com/settings/security/lesssecureapps
     # 2. https://accounts.google.com/DisplayUnlockCaptcha
     session = smtplib.SMTP('smtp.gmail.com', 587)  # use gmail with port
-    # session.starttls()  # enable security
+    session.starttls()  # enable security
     session.login(email, password)  # login with mail_id and password
     session.quit()
     return True
 
 
-def low_level_send_email(sender_email, receiver_email, title, content):
+def low_level_send_email(sender_email, receiver_email, title, content, for_admin=False):
     # Using SendGrid services as email relay
     message = Mail(
         from_email=sender_email,
@@ -523,7 +540,10 @@ def low_level_send_email(sender_email, receiver_email, title, content):
         subject=title,
         html_content=content)
     try:
-        sg = SendGridAPIClient(SEND_GRID_API_KEY)
+        if not for_admin:
+            sg = SendGridAPIClient(SEND_GRID_API_KEY)
+        else:
+            sg = SendGridAPIClient(MAINTAINANCE_SEND_GRID_API_KEY)
         response = sg.send(message)
         if response.status_code == 202:
             return Response(status=status.HTTP_200_OK)
@@ -533,21 +553,25 @@ def low_level_send_email(sender_email, receiver_email, title, content):
         return Response(status=e.message)
 
 
-def send_invitation_to_user(firstname, lastname, generated_password, receiver_email, username):
+def send_invitation_to_user(firstname, lastname, generated_password, receiver_email, username, for_admin=False):
     if DEBUG:
         front_end_url = "http://localhost:4200"
     else:
         front_end_url = "https://mousemanagementsite.herokuapp.com"
     title = "Hello from Mouse Management Committee"
+    if not for_admin:
+        position = 'Administrator'
+    else:
+        position = 'Maintainance'
     content = '<h2>Hello ' + lastname + ' ' + firstname + '</h2>' \
-                                                          '<p>Your user account has been created by Admin</p>' \
-                                                          '<p>Please Click the following link to update the ' \
+                                                          '<p>Your user account has been created by ' + position + \
+                                                          '</p><p>Please Click the following link to update the ' \
                                                           'password:</p><p>' + \
               front_end_url + '/update-pwd-new-user?secret_key=' + generated_password + \
               '&username=' + username + \
               '</p><br /><p>Regards</p>'
 
-    res = send_email(title, content, receiver_email)
+    res = send_email(title, content, receiver_email, for_admin)
 
     if res.status_code == 200:
         return True
@@ -555,10 +579,13 @@ def send_invitation_to_user(firstname, lastname, generated_password, receiver_em
         return False
 
 
-def send_email(title, content, receiver_email):
+def send_email(title, content, receiver_email, for_admin=False):
     try:
-        superusers = User.objects.get(is_superuser=True)
-        return low_level_send_email(superusers.email, receiver_email, title, content)
+        if not for_admin:
+            superusers = User.objects.get(is_superuser=True)
+            return low_level_send_email(superusers.email, receiver_email, title, content, for_admin)
+        else:
+            return low_level_send_email(MAINTAINANCE_EMAIL, receiver_email, title, content, for_admin)
     except smtplib.SMTPHeloError:
         return Response(status=status.HTTP_400_BAD_REQUEST)
     except smtplib.SMTPRecipientsRefused:
