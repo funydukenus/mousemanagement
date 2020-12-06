@@ -6,6 +6,7 @@ from rest_framework.response import Response
 
 from usermanagement.views import get_random_alphanumeric_string, check_if_user_is_logged, get_response_frame_data, \
     return_response
+from .models import HarvestedMouse
 from .mvc_model.Error import DuplicationMouseError, MouseNotFoundError
 from .mvc_model.model import Mouse, AdvancedRecord, Record
 from django import forms
@@ -250,7 +251,11 @@ def harvested_import_mouse(request):
                 # get again the user to double confirm
                 user = User.objects.get(id=user.id)
                 if user.userextend.uploaded_file_name == filename:
-                    response_success = True
+                    num_csv_file_rows = len(pd.read_csv(user.userextend.uploaded_file_name))
+                    if num_csv_file_rows >= 200:
+                        payload = 'Please restrict number entires to max 200 entries'
+                    else:
+                        response_success = True
                 else:
                     payload = 'Unknown database error'
             else:
@@ -259,6 +264,10 @@ def harvested_import_mouse(request):
             payload = 'Unknown database error'
     else:
         payload = "Authorization failed"
+
+    if not response_success:
+        if os.path.exists(filename):
+            os.remove(filename)
 
     return return_response(response_frame, response_success, payload)
 
@@ -285,6 +294,14 @@ def parsing_imported_mouse(request):
 
     return return_response(response_frame, response_success, payload)
 
+
+@api_view(['GET'])
+def clear_all_mouse(request):
+    try:
+        HarvestedMouse.objects.all().delete()
+        return Response(status=status.HTTP_200_OK)
+    except TypeError:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 # Helper
 def save_uploaded_file(f, filename):
