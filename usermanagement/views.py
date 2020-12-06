@@ -175,7 +175,6 @@ def check_secret_key(request):
             # and user is inactive
             if user.check_password(secret_key) and not user.is_active:
                 response_success = True
-
     return return_response(response_frame, response_success, payload)
 
 
@@ -520,18 +519,6 @@ def return_response(response_frame, response_success, payload=""):
     return Response(response_frame, status=status.HTTP_200_OK)
 
 
-def verify_super_user_email(email, password):
-    # if email failed try the below 2,
-    # 1. You need to allow less secure apps, you can do it by click below link
-    #    https://www.google.com/settings/security/lesssecureapps
-    # 2. https://accounts.google.com/DisplayUnlockCaptcha
-    session = smtplib.SMTP('smtp.gmail.com', 587)  # use gmail with port
-    session.starttls()  # enable security
-    session.login(email, password)  # login with mail_id and password
-    session.quit()
-    return True
-
-
 def low_level_send_email(sender_email, receiver_email, title, content, for_admin=False):
     # Using SendGrid services as email relay
     message = Mail(
@@ -540,10 +527,7 @@ def low_level_send_email(sender_email, receiver_email, title, content, for_admin
         subject=title,
         html_content=content)
     try:
-        if not for_admin:
-            sg = SendGridAPIClient(SEND_GRID_API_KEY)
-        else:
-            sg = SendGridAPIClient(MAINTAINANCE_SEND_GRID_API_KEY)
+        sg = SendGridAPIClient(MAINTAINANCE_SEND_GRID_API_KEY)
         response = sg.send(message)
         if response.status_code == 202:
             return Response(status=status.HTTP_200_OK)
@@ -581,11 +565,7 @@ def send_invitation_to_user(firstname, lastname, generated_password, receiver_em
 
 def send_email(title, content, receiver_email, for_admin=False):
     try:
-        if not for_admin:
-            superusers = User.objects.get(is_superuser=True)
-            return low_level_send_email(superusers.email, receiver_email, title, content, for_admin)
-        else:
-            return low_level_send_email(MAINTAINANCE_EMAIL, receiver_email, title, content, for_admin)
+        return low_level_send_email(MAINTAINANCE_EMAIL, receiver_email, title, content, for_admin)
     except smtplib.SMTPHeloError:
         return Response(status=status.HTTP_400_BAD_REQUEST)
     except smtplib.SMTPRecipientsRefused:
