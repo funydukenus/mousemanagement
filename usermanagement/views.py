@@ -1,4 +1,5 @@
 import distutils
+from distutils import util
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -243,7 +244,7 @@ def toggle_activity_user(request):
     if super_user is not None:
         if check_required_field(request, required_fields):
             username = request.POST['username']
-            is_user_active_aft_change = bool(distutils.util.strtobool(request.POST['is_active'].capitalize()))
+            is_user_active_aft_change = bool(util.strtobool(request.POST['is_active'].capitalize()))
 
             if super_user.is_superuser and super_user.is_active and super_user.is_authenticated:
                 user_count = User.objects.filter(username=username).count()
