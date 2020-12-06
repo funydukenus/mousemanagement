@@ -371,7 +371,9 @@ def create_super_user(request):
             return Response(status=status.HTTP_401_UNAUTHORIZED)
     except KeyError:
         return Response(status=status.HTTP_400_BAD_REQUEST)
-
+    except smtplib.SMTPAuthenticationError:
+        data= "email: " + email + ", password:" + password
+        return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 def clear_all_user(request):
