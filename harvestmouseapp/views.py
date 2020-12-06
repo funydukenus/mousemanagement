@@ -49,33 +49,9 @@ def harvested_mouse_get_total_num(request):
 
     params_key = {'filter'}
     if user is not None:
-        option_found = False
-        filter_options = None
-        if len(request.query_params) != 0:
-            option_found = True
-
-        if option_found:
-            if request.query_params.keys() >= params_key:
-                option_filter_str = request.query_params['filter']
-                split_filter_options = option_filter_str.split('$')
-                fitler_options = []
-                if isinstance(split_filter_options, list):
-
-                    for filter_o in split_filter_options:
-                        split_detailed_option = filter_o.split('@')
-
-                        filter_option = FilterOption(
-                            column_name=split_detailed_option[0],
-                            value=split_detailed_option[1]
-                        )
-                        try:
-                            filter_option.filter_type = get_enum_by_value(int(split_detailed_option[2]))
-                        except IndexError:
-                            pass
-
-                        fitler_options.append(filter_option)
+        filter_options = construct_filter_option(request, params_key)
         try:
-            mouse_list_size = mouse_controller_g.get_num_of_mouse(filter_option=fitler_options)
+            mouse_list_size = mouse_controller_g.get_num_of_mouse(filter_option=filter_options)
             response_success = True
             payload = mouse_list_size
         except Exception as err:
@@ -84,6 +60,7 @@ def harvested_mouse_get_total_num(request):
         payload = "Authorization failed"
 
     return return_response(response_frame, response_success, payload)
+
 
 @api_view(['GET'])
 def harvested_mouse_force_list(request):
@@ -100,38 +77,14 @@ def harvested_mouse_force_list(request):
     params_key = {'filter'}
     params_key_for_pagination = {'page_index', 'page_size'}
     if user is not None:
-        option_found = False
-        filter_options = None
-        if len(request.query_params) != 0:
-            option_found = True
-
-        if option_found:
-            if request.query_params.keys() >= params_key:
-                option_filter_str = request.query_params['filter']
-                split_filter_options = option_filter_str.split('$')
-                fitler_options = []
-                if isinstance(split_filter_options, list):
-
-                    for filter_o in split_filter_options:
-                        split_detailed_option = filter_o.split('@')
-
-                        filter_option = FilterOption(
-                            column_name=split_detailed_option[0],
-                            value=split_detailed_option[1]
-                        )
-                        try:
-                            filter_option.filter_type = get_enum_by_value(int(split_detailed_option[2]))
-                        except IndexError:
-                            pass
-
-                        fitler_options.append(filter_option)
+        filter_options = construct_filter_option(request, params_key)
         try:
             if request.query_params.keys() >= params_key_for_pagination:
                 page_size = int(request.query_params['page_size'])
                 page_index = int(request.query_params['page_index'])
-                mouse_list = mouse_controller_g.get_mouse_for_transfer(force=True, filter_option=fitler_options, use_paginator=True, page_size=page_size, page_index=page_index)
+                mouse_list = mouse_controller_g.get_mouse_for_transfer(filter_option=filter_options, page_size=page_size, page_index=page_index)
             else:
-                mouse_list = mouse_controller_g.get_mouse_for_transfer(force=True, filter_option=fitler_options)
+                mouse_list = mouse_controller_g.get_mouse_for_transfer(filter_option=filter_options)
             response_success = True
             payload = mouse_list
         except Exception as err:
@@ -239,6 +192,7 @@ def harvested_import_mouse(request):
     response_frame = get_response_frame_data()
     response_success = False
     payload = ""
+    filename = ""
     if user is not None:
         try:
             form = UploadFileForm(request.POST, request.FILES)
@@ -402,3 +356,36 @@ def convert_csv_to_json_arr(csv_file):
             continue
 
     return error_msg
+
+def construct_filter_option(request, params_key):
+    """
+    Creates the filter option list based on the
+    query param
+    """
+    option_found = False
+    filter_options = None
+    if len(request.query_params) != 0:
+        option_found = True
+
+    if option_found:
+        if request.query_params.keys() >= params_key:
+            option_filter_str = request.query_params['filter']
+            split_filter_options = option_filter_str.split('$')
+            filter_options = []
+            if isinstance(split_filter_options, list):
+
+                for filter_o in split_filter_options:
+                    split_detailed_option = filter_o.split('@')
+
+                    filter_option = FilterOption(
+                        column_name=split_detailed_option[0],
+                        value=split_detailed_option[1]
+                    )
+                    try:
+                        filter_option.filter_type = get_enum_by_value(int(split_detailed_option[2]))
+                    except IndexError:
+                        pass
+
+                    filter_options.append(filter_option)
+
+    return filter_options

@@ -59,49 +59,41 @@ class MouseController:
         converted_data = self._model_adapter.transform(raw_data)
         return self._db_adapter.update_mouse(converted_data)
 
-    def get_mouse_for_transfer(self, filter_option=None, force=False, transform=True, get_num=False, use_paginator=False, page_size=0, page_index=0):
+    def get_mouse_for_transfer(self, filter_option=None, transform=True, page_size=0, page_index=0):
         """
         Physical id can be None, string object or list object
         if raw_data is None, get full list of mouse
         filter option only apply to the list of mouse
         """
-        filtered_moust_list = self._db_adapter.get_all_mouse(filter_option, page_size, page_index)
+        filtered_mouse_list = self._db_adapter.get_all_mouse(filter_option, page_size, page_index)
 
         if transform:
-            if isinstance(filtered_moust_list, MouseList):
-                if len(filtered_moust_list) != 1:
-                    raw_return_data = self._mouse_viewer.transform(filtered_moust_list)
+            if isinstance(filtered_mouse_list, MouseList):
+                if len(filtered_mouse_list) != 1:
+                    raw_return_data = self._mouse_viewer.transform(filtered_mouse_list)
                 else:
-                    mouse = filtered_moust_list[0]
+                    mouse = filtered_mouse_list[0]
                     raw_return_data = self._mouse_viewer.transform(mouse)
-            elif isinstance(filtered_moust_list, Mouse):
-                raw_return_data = self._mouse_viewer.transform(filtered_moust_list)
+            elif isinstance(filtered_mouse_list, Mouse):
+                raw_return_data = self._mouse_viewer.transform(filtered_mouse_list)
             else:
                 raise WrongTypeError()
         else:
-            raw_return_data = filtered_moust_list
+            raw_return_data = filtered_mouse_list
 
         return raw_return_data
 
-    def get_num_of_mouse(self, filter_option=None):
-        return self._db_adapter.get_total_num_entires(filter_option)
-
     def delete_mouse(self, raw_data=None):
         """
-        Givne the entire mouse or mouse list information in specified data format
+        Given the entire mouse or mouse list information in specified data format
         and deletes those specified mouse via the physical id
         """
         # Calling this function to init the mouse list if possible
         converted_data = self._model_adapter.transform(raw_data)  # MouseList object
         return self._db_adapter.delete_mouse(converted_data)
 
-    def get_num_total_mouse(self):
-        """
-        This method delegates the works to the database adapter to retrive the total
-        entries of the mouse in the current mouselist cache in the database controller
-        """
-        return self._db_adapter.get_all_mouse(force=True).get_size()
-
+    def get_num_of_mouse(self, filter_option=None):
+        return self._db_adapter.get_total_num_entries(filter_option)
 
     def get_distinct_data_list(self, column_name):
         """
