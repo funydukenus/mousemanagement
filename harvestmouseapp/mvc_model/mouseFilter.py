@@ -118,3 +118,19 @@ class MouseFilter(GenericMouseFilter):
             list_mouse = mouse_input
             return_mouse_list.add_mouse(list_mouse)
         return return_mouse_list
+
+    def construct_filter_string(self, filter_option):
+        if filter_option.filter_type == FilterType.CONTAINS:
+            return filter_option.column_name[1:].replace('Mouse__','') + '__contains'
+        elif filter_option.filter_type == FilterType.EQ:
+            return filter_option.column_name[1:].replace('Mouse__','') + '__exact'
+        elif filter_option.filter_type == FilterType.GT:
+            return filter_option.column_name[1:].replace('Mouse__','') + '__gt'
+        elif filter_option.filter_type == FilterType.GTE:
+            return filter_option.column_name[1:].replace('Mouse__','') + '__gte'
+        elif filter_option.filter_type == FilterType.LT:
+            return filter_option.column_name[1:].replace('Mouse__','') + '__lt'
+        elif filter_option.filter_type == FilterType.LTE:
+            return filter_option.column_name[1:].replace('Mouse__','') + '__lte'
+        else:
+            return filter_option.column_name[1:].replace('Mouse__','') + '__contains'

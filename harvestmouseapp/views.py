@@ -74,7 +74,7 @@ def harvested_mouse_get_total_num(request):
 
                         fitler_options.append(filter_option)
         try:
-            mouse_list_size = mouse_controller_g.get_mouse_for_transfer(force=True, filter_option=fitler_options, get_num=True)
+            mouse_list_size = mouse_controller_g.get_num_of_mouse(filter_option=fitler_options)
             response_success = True
             payload = mouse_list_size
         except Exception as err:
@@ -214,30 +214,14 @@ def get_data_option_list(request):
 
     if user is not None:
         try:
-            # Get the list of mouse object first
-            harvesed_mouse_list = mouse_controller_g.get_mouse_for_transfer(transform=False)
-            mouseline_list = []
-            genotype_list = []
-            phenotype_list = []
-            project_title_list = []
-            handler_list = []
-            experiement_list = []
             data = {}
-
-            for harvestedMouse in harvesed_mouse_list:
-                mouseline_list.append(harvestedMouse.mouseline)
-                genotype_list.append(harvestedMouse.genotype)
-                phenotype_list.append(harvestedMouse.phenotype)
-                project_title_list.append(harvestedMouse.project_title)
-                handler_list.append(harvestedMouse.handler)
-                experiement_list.append(harvestedMouse.experiment)
-
-            data['mouseLineList'] = list(set(mouseline_list))
-            data['genoTypeList'] = list(set(genotype_list))
-            data['phenoTypeList'] = list(set(phenotype_list))
-            data['projectTitleList'] = list(set(project_title_list))
-            data['handlerList'] = list(set(handler_list))
-            data['experiementList'] = list(set(experiement_list))
+            # Get the list of mouse object first
+            data['mouseLineList'] = mouse_controller_g.get_distinct_data_list('mouseLine')
+            data['genoTypeList'] = mouse_controller_g.get_distinct_data_list('genoType')
+            data['phenoTypeList'] = mouse_controller_g.get_distinct_data_list('phenoType')
+            data['projectTitleList'] = mouse_controller_g.get_distinct_data_list('projectTitle')
+            data['handlerList'] = mouse_controller_g.get_distinct_data_list('handler')
+            data['experiementList'] = mouse_controller_g.get_distinct_data_list('experiment')
 
             response_success = True
             payload = data

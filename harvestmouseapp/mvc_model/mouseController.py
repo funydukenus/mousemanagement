@@ -65,30 +65,15 @@ class MouseController:
         if raw_data is None, get full list of mouse
         filter option only apply to the list of mouse
         """
-        filtered_moust_list = self._db_adapter.get_all_mouse()
+        filtered_moust_list = self._db_adapter.get_all_mouse(filter_option, page_size, page_index)
 
         if transform:
-            if filter_option is not None:
-                # Filtered mouse list can ba a list of mouse or single individual mouse object
-                for f in filter_option:
-                    filtered_moust_list = self._mouse_filter.filter(filtered_moust_list, f)
-
-                # transform will take either single moust object or list of object
-                # and transforms to target format
             if isinstance(filtered_moust_list, MouseList):
                 if len(filtered_moust_list) != 1:
-                    if use_paginator:
-                        filtered_moust_list = filtered_moust_list.paginatate(page_size, page_index)
-                    if get_num:
-                        raw_return_data = filtered_moust_list.get_size()
-                    else:
-                        raw_return_data = self._mouse_viewer.transform(filtered_moust_list)
+                    raw_return_data = self._mouse_viewer.transform(filtered_moust_list)
                 else:
                     mouse = filtered_moust_list[0]
-                    if get_num:
-                        raw_return_data = 1
-                    else:
-                        raw_return_data = self._mouse_viewer.transform(mouse)
+                    raw_return_data = self._mouse_viewer.transform(mouse)
             elif isinstance(filtered_moust_list, Mouse):
                 raw_return_data = self._mouse_viewer.transform(filtered_moust_list)
             else:
@@ -97,6 +82,9 @@ class MouseController:
             raw_return_data = filtered_moust_list
 
         return raw_return_data
+
+    def get_num_of_mouse(self, filter_option=None):
+        return self._db_adapter.get_total_num_entires(filter_option)
 
     def delete_mouse(self, raw_data=None):
         """
@@ -113,3 +101,11 @@ class MouseController:
         entries of the mouse in the current mouselist cache in the database controller
         """
         return self._db_adapter.get_all_mouse(force=True).get_size()
+
+
+    def get_distinct_data_list(self, column_name):
+        """
+        This method delegates the works to the database adapter to retrive the distinct
+        value of the target column
+        """
+        return self._db_adapter.get_distinct_data_list(column_name)

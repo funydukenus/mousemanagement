@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
+
+from django.core.paginator import Paginator
+
 from harvestmouseapp.models import HarvestedMouse, HarvestedBasedNumber, HarvestedAdvancedNumber
 from harvestmouseapp.mvc_model.Error import DuplicationMouseError, MouseNotFoundError
 from harvestmouseapp.mvc_model.model import Mouse, MouseList
+from harvestmouseapp.mvc_model.mouseFilter import MouseFilter
 
 
 class GenericDatabaseAdapter(ABC):
@@ -33,6 +37,13 @@ class GenericDatabaseAdapter(ABC):
     def delete_mouse(self, mouse_input):
         pass
 
+    @abstractmethod
+    def get_distinct_data_list(self, column_name):
+        pass
+
+    @abstractmethod
+    def get_total_num_entires(self):
+        pass
 
 class GenericSqliteConnector(GenericDatabaseAdapter):
     def __init__(self):
@@ -97,7 +108,7 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
         if len(return_mouse_input) != 0:
             raise MouseNotFoundError(return_mouse_input)
 
-    def get_all_mouse(self):
+    def get_all_mouse(self, filter_options=None, page_size=0, page_index=0):
         """
         This is an overrided get_all_mouse method from GenericDatabaseAdapter that
         retrive the MouseList obj either from cache or from the database. Supposely
@@ -106,8 +117,21 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
         read data in the database
         """
         self._mouse_list.clear()
-        mouse_data_from_db = HarvestedMouse.objects.all()
-        self._convert_sqlite_db_mouse_object_and_save_into_cache(mouse_data_from_db)
+        filter = MouseFilter()
+        filtered_mouse_list = HarvestedMouse.objects.all()
+        if filter_options is not None:
+            my_filter = {}
+            for f in filter_options:
+                filter_option_str = filter.construct_filter_string(f)
+                my_filter[filter_option_str] = f.value
+            filtered_mouse_list = filtered_mouse_list.filter(**my_filter)
+
+        if not(page_size == 0):
+            pages = Paginator(filtered_mouse_list, page_size)
+            filtered_mouse_list = pages.page(page_index + 1).object_list
+            self._convert_sqlite_db_mouse_object_and_save_into_cache(filtered_mouse_list)
+        else:
+            self._convert_sqlite_db_mouse_object_and_save_into_cache(filtered_mouse_list)
         return self._mouse_list
 
     def delete_mouse(self, mouse_input):
@@ -136,6 +160,21 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
 
         if len(return_mouse_input) != 0:
             raise MouseNotFoundError(mouse_input)
+
+    def get_distinct_data_list(self, column_name):
+        return [data[column_name] for data in self._get_distinct_data_list(column_name)]
+
+    def get_total_num_entires(self, filter_options=None):
+        filter = MouseFilter()
+        filtered_mouse_list = HarvestedMouse.objects.all()
+        if filter_options is not None:
+            my_filter = {}
+            for f in filter_options:
+                filter_option_str = filter.construct_filter_string(f)
+                my_filter[filter_option_str] = f.value
+            return filtered_mouse_list.filter(**my_filter).count()
+        else:
+            return filtered_mouse_list.count()
 
     def _create_intermal_harvested_mouse_and_save_into_cache(self, single_mouse):
         """
@@ -304,3 +343,7 @@ class GenericSqliteConnector(GenericDatabaseAdapter):
             self._mouse_list.remove_mouse(mouse_ojb)
         else:
             return_mouse_input.add_mouse(mouse_ojb)
+
+    def _get_distinct_data_list(self, column_name):
+        data_list = HarvestedMouse.objects.order_by().values(column_name).distinct()
+        return data_list
