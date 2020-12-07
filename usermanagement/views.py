@@ -1,6 +1,4 @@
-import distutils
 from distutils import util
-
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -13,7 +11,7 @@ import random
 import string
 import smtplib
 from usermanagement.UserViewer import JsonUserViewer
-from mousemanagement.settings import DEBUG, SEND_GRID_API_KEY, MAINTAINANCE_EMAIL, MAINTAINANCE_SEND_GRID_API_KEY
+from mousemanagement.settings import DEBUG, MAINTAINANCE_EMAIL, MAINTAINANCE_SEND_GRID_API_KEY
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
@@ -25,7 +23,6 @@ def user_login(request):
     response_success = False
     # Check if all the required fields are provided
     required_fields = {'username', 'password'}
-
     if request.POST.keys() >= required_fields:
         user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
 
@@ -330,7 +327,6 @@ def get_logged_user_info(request):
     user = check_if_user_is_logged(request)
     response_frame = get_response_frame_data()
     response_success = False
-
     # Check if there's user found
     if user is not None:
         user_viewer = JsonUserViewer()
@@ -340,43 +336,6 @@ def get_logged_user_info(request):
         payload = "User not found"
 
     return return_response(response_frame, response_success, payload)
-
-
-#########################################################
-# Backdoor only interface
-#########################################################
-@api_view(['POST'])
-def create_super_user(request):
-    try:
-        username = request.POST['username']
-        password = request.POST['password']
-        email = request.POST['email']
-        firstname = request.POST['firstname']
-        lastname = request.POST['lastname']
-
-        secret_key = request.POST['secret_key']
-
-        if not verify_super_user_email(email, password):
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
-        if secret_key == 'LAB_AADDGGE':
-            _internal_create_user(
-                username=username,
-                password=password,
-                email=email,
-                firstname=firstname,
-                lastname=lastname,
-                is_super_user=True,
-                is_active=True,
-                is_email_verified=True
-            )
-            return Response(status=status.HTTP_201_CREATED)
-        else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
-    except KeyError:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-    except smtplib.SMTPAuthenticationError:
-        data= "email: " + email + ", password:" + password
-        return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -461,7 +420,7 @@ def check_if_user_is_logged(request):
     """
     # Check if the session exists for the current requested user
     if '_auth_user_id' in request.session:
-        # if the user id existsed in the session
+        # if the user id existed in the session
         # Try use that to get the user info from db
         user_id = request.session['_auth_user_id']
         user_count = User.objects.filter(id=user_id).count()
@@ -519,7 +478,7 @@ def return_response(response_frame, response_success, payload=""):
     return Response(response_frame, status=status.HTTP_200_OK)
 
 
-def low_level_send_email(sender_email, receiver_email, title, content, for_admin=False):
+def low_level_send_email(sender_email, receiver_email, title, content):
     # Using SendGrid services as email relay
     message = Mail(
         from_email=sender_email,
@@ -546,7 +505,7 @@ def send_invitation_to_user(firstname, lastname, generated_password, receiver_em
     if not for_admin:
         position = 'Administrator'
     else:
-        position = 'Maintainance'
+        position = 'Maintenance'
     content = '<h2>Hello ' + lastname + ' ' + firstname + '</h2>' \
                                                           '<p>Your user account has been created by ' + position + \
                                                           '</p><p>Please Click the following link to update the ' \
@@ -555,7 +514,7 @@ def send_invitation_to_user(firstname, lastname, generated_password, receiver_em
               '&username=' + username + \
               '</p><br /><p>Regards</p>'
 
-    res = send_email(title, content, receiver_email, for_admin)
+    res = send_email(title, content, receiver_email)
 
     if res.status_code == 200:
         return True
@@ -563,9 +522,9 @@ def send_invitation_to_user(firstname, lastname, generated_password, receiver_em
         return False
 
 
-def send_email(title, content, receiver_email, for_admin=False):
+def send_email(title, content, receiver_email):
     try:
-        return low_level_send_email(MAINTAINANCE_EMAIL, receiver_email, title, content, for_admin)
+        return low_level_send_email(MAINTAINANCE_EMAIL, receiver_email, title, content)
     except smtplib.SMTPHeloError:
         return Response(status=status.HTTP_400_BAD_REQUEST)
     except smtplib.SMTPRecipientsRefused:
