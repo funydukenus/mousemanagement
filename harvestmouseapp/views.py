@@ -313,8 +313,8 @@ def convert_csv_to_json_arr(csv_file):
             else:
                 gender = 'F'
 
-            birth_date = datetime.strptime(row['birthdate'], '%m-%d-%Y')
-            end_date = datetime.strptime(row['End date'], '%m-%d-%Y')
+            birth_date = convert_diff_datetime_format(row['birthdate'])
+            end_date = convert_diff_datetime_format(row['End date'])
 
             mouse = create_mouse_object(
                 handler=row['Handled by'],
@@ -356,6 +356,18 @@ def convert_csv_to_json_arr(csv_file):
             continue
 
     return error_msg
+
+
+def convert_diff_datetime_format(str_datetime):
+    for fmt in ('%m-%d-%Y', '%m/%d/%Y', '%b-%d-%Y', '%b/%d/%Y',
+                '%B-%d-%Y', '%B/%d/%Y', '%d-%b-%Y', '%d/%b/%Y',
+                '%d-%B-%Y', '%d/%B/%Y'):
+        try:
+            return datetime.strptime(str_datetime, fmt)
+        except ValueError:
+            pass
+    raise ValueError('no valid date format found')
+
 
 def construct_filter_option(request, params_key):
     """
