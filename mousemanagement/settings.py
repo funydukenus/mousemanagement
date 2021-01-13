@@ -199,5 +199,5 @@ django_heroku.settings(locals())
 # API KEY for Send Grid services
 SEND_GRID_API_KEY = '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'
 
-MAINTAINANCE_EMAIL = "chenyuhang01@gmail.com"
-MAINTAINANCE_SEND_GRID_API_KEY = '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'
+MAINTAINANCE_EMAIL = "fny.duke.nus@gmail.com"
+MAINTAINANCE_SEND_GRID_API_KEY = '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'
