@@ -11,7 +11,7 @@ import random
 import string
 import smtplib
 from usermanagement.UserViewer import JsonUserViewer
-from mousemanagement.settings import DEBUG, MAINTAINANCE_EMAIL, MAINTAINANCE_SEND_GRID_API_KEY
+from mousemanagement.settings import DEBUG, MAINTAINANCE_EMAIL, MAINTAINANCE_SEND_GRID_API_KEY, HEROKU_DEBUG
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
@@ -497,7 +497,7 @@ def low_level_send_email(sender_email, receiver_email, title, content):
 
 
 def send_invitation_to_user(firstname, lastname, generated_password, receiver_email, username, for_admin=False):
-    if DEBUG:
+    if DEBUG and not HEROKU_DEBUG:
         front_end_url = "http://localhost:4200"
     else:
         front_end_url = "https://mousemanagementsite.herokuapp.com"
