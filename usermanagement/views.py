@@ -508,6 +508,7 @@ def send_invitation_to_user(firstname, lastname, generated_password, receiver_em
         position = 'Maintenance'
     content = '<h2>Hello ' + lastname + ' ' + firstname + '</h2>' \
                                                           '<p>Your user account has been created by ' + position + \
+                                                          '</p><p>Username: + ' + username + \
                                                           '</p><p>Please Click the following link to update the ' \
                                                           'password:</p><p>' + \
               front_end_url + '/update-pwd-new-user?secret_key=' + generated_password + \
