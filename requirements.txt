@@ -19,7 +19,7 @@ python-firebase==1.2
 requests==2.23.0
 six==1.14.0
 sendgrid==6.4.7
-Twisted==20.3.0
+Twisted==22.10.0
 urllib3==1.25.9
 wcwidth==0.1.9
 whitenoise==5.2.0
